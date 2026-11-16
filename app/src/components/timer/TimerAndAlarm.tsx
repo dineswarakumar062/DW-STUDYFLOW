@@ -64,6 +64,7 @@ export const TimerAndAlarm: React.FC = () => {
     toggleAlarm,
     customTimers,
     saveCustomTimers,
+    setLiveSession,
   } = useApp();
 
   const [activePanel, setActivePanel] = useState<'timer' | 'alarms'>('timer');
@@ -71,8 +72,12 @@ export const TimerAndAlarm: React.FC = () => {
   // Custom Timers State
   const [activeTimerId, setActiveTimerId] = useState<string>(customTimers[0]?.id || 'timer-pomodoro');
   
-  // Active Timer state
+  // Active Timer state (falls back to Pomodoro Focus when customTimers is empty in clean seed mode)
+  const [selectedBuiltInPreset, setSelectedBuiltInPreset] = useState<CustomTimerItem | null>(null);
   const activeTimer = useMemo(() => {
+    if (selectedBuiltInPreset && selectedBuiltInPreset.id === activeTimerId) {
+      return selectedBuiltInPreset;
+    }
     return customTimers.find(t => t.id === activeTimerId) || customTimers[0] || {
       id: 'timer-default',
       name: 'Pomodoro Focus',
@@ -81,7 +86,7 @@ export const TimerAndAlarm: React.FC = () => {
       colorTheme: 'emerald' as const,
       createdAt: new Date().toISOString(),
     };
-  }, [customTimers, activeTimerId]);
+  }, [customTimers, activeTimerId, selectedBuiltInPreset]);
 
   const [timeLeft, setTimeLeft] = useState<number>(activeTimer.durationMinutes * 60);
   const [isRunning, setIsRunning] = useState(false);
@@ -116,6 +121,18 @@ export const TimerAndAlarm: React.FC = () => {
   const sessionStartTimeRef = useRef<string | null>(null);
   const leaveCountRef = useRef<number>(0);
   const notificationIdRef = useRef(0);
+
+  // Sync live session state to AppContext for Dashboard Live Session Card
+  useEffect(() => {
+    setLiveSession({
+      isRunning,
+      timerName: activeTimer.name,
+      timerType: activeTimer.type,
+      timeLeftSeconds: timeLeft,
+      leaveCount,
+      completedWorkBlocks,
+    });
+  }, [isRunning, activeTimer.name, activeTimer.type, timeLeft, leaveCount, completedWorkBlocks, setLiveSession]);
 
   // Sync timer when activeTimer changes
   useEffect(() => {
@@ -733,13 +750,54 @@ export const TimerAndAlarm: React.FC = () => {
                 </h3>
               </div>
               <button
+                type="button"
                 onClick={openAddTimerModal}
-                className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
+                className="text-xs font-bold text-[#15803D] dark:text-[#86EFAC] hover:underline flex items-center gap-1"
               >
                 <Plus className="w-4 h-4" /> Add custom timer
               </button>
             </div>
 
+            {/* Built-in Wellness Presets (always available even in clean seed mode) */}
+            <div className="flex flex-wrap items-center gap-2">
+              {[
+                { id: 'preset-focus-25', name: 'Pomodoro Focus', durationMinutes: 25, type: 'focus' as const },
+                { id: 'preset-short-break-5', name: 'Short Break (5 min)', durationMinutes: 5, type: 'shortBreak' as const },
+                { id: 'preset-long-break-15', name: 'Long Break (15 min)', durationMinutes: 15, type: 'longBreak' as const },
+              ].map((preset) => {
+                const isSelected = activeTimer.id === preset.id;
+                return (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedBuiltInPreset({
+                        ...preset,
+                        colorTheme: 'emerald',
+                        createdAt: new Date().toISOString(),
+                      });
+                      setActiveTimerId(preset.id);
+                    }}
+                    className={`rounded-full px-3.5 py-1.5 text-xs font-bold border transition-colors ${
+                      isSelected
+                        ? 'bg-[#15803D] text-white border-[#15803D]'
+                        : 'bg-[#DCFCE7]/70 dark:bg-emerald-950/50 text-[#14532D] dark:text-emerald-200 border-emerald-200 dark:border-emerald-800 hover:bg-[#DCFCE7]'
+                    }`}
+                  >
+                    {preset.name}
+                  </button>
+                );
+              })}
+            </div>
+
+            {customTimers.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-emerald-200 dark:border-emerald-800/60 bg-white/70 dark:bg-[#13261C]/60 p-6 text-center space-y-2">
+                <p className="text-sm font-bold text-[#14201A] dark:text-white">No custom timers saved yet</p>
+                <p className="text-xs text-[#4B5B52] dark:text-emerald-200/80">
+                  Use the presets above or add your own custom timer.
+                </p>
+              </div>
+            ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
               {customTimers.map((t) => {
                 const isActive = t.id === activeTimerId;
@@ -794,7 +852,7 @@ export const TimerAndAlarm: React.FC = () => {
                       <span className="font-black text-slate-700 dark:text-slate-300">
                         {t.durationMinutes} mins
                       </span>
-                      <span className={`text-[11px] font-bold flex items-center gap-1 ${isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'}`}>
+                      <span className={`text-[11px] font-bold flex items-center gap-1 ${isActive ? 'text-[#15803D] dark:text-[#86EFAC]' : 'text-slate-400'}`}>
                         {isActive ? 'Active Now' : 'Select Timer'}
                         <ChevronRight className="w-3 h-3" />
                       </span>
@@ -803,6 +861,7 @@ export const TimerAndAlarm: React.FC = () => {
                 );
               })}
             </div>
+            )}
           </div>
 
           {/* =========================================================================

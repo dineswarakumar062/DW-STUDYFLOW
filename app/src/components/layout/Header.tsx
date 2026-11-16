@@ -17,6 +17,7 @@ import {
   CalendarCheck
 } from 'lucide-react';
 import { QuickTaskModal } from '../tasks/QuickTaskModal';
+import { ENABLE_CLOUD_SYNC } from '../../services/firebaseSync';
 
 export const Header: React.FC = () => {
   const { 
@@ -169,22 +170,28 @@ export const Header: React.FC = () => {
             </button>
           )}
 
-          {/* Real-time Sync Status Pill */}
-          <button
-            onClick={triggerSync}
-            aria-label="Refresh local data"
-            className={`flex items-center gap-1.5 p-2 sm:px-3 sm:py-1.5 rounded-full text-xs font-bold border transition-all ${
-              syncStatus === 'syncing' 
-                ? 'bg-[#DCFCE7] text-[#15803D] border-[#86EFAC] dark:bg-emerald-950/60 dark:text-emerald-300' 
-                : 'bg-white dark:bg-emerald-950/40 text-[#4B5B52] dark:text-emerald-200 hover:text-[#14201A] dark:hover:text-white border-emerald-200 dark:border-emerald-800/60'
-            }`}
-            title="Refresh local data"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${syncStatus === 'syncing' ? 'animate-spin text-[#15803D]' : 'text-[#4B5B52] dark:text-emerald-300'}`} />
-            <span className="hidden sm:inline">
-              {syncStatus === 'syncing' ? 'Syncing...' : 'Local Ready'}
+          {/* Storage / Sync Status */}
+          {ENABLE_CLOUD_SYNC ? (
+            <button
+              onClick={triggerSync}
+              aria-label="Sync data"
+              className={`flex items-center gap-1.5 p-2 sm:px-3 sm:py-1.5 rounded-full text-xs font-bold border transition-all ${
+                syncStatus === 'syncing' 
+                  ? 'bg-[#DCFCE7] text-[#15803D] border-[#86EFAC] dark:bg-emerald-950/60 dark:text-emerald-300' 
+                  : 'bg-white dark:bg-emerald-950/40 text-[#4B5B52] dark:text-emerald-200 hover:text-[#14201A] dark:hover:text-white border-emerald-200 dark:border-emerald-800/60'
+              }`}
+              title="Sync data"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${syncStatus === 'syncing' ? 'animate-spin text-[#15803D]' : 'text-[#4B5B52] dark:text-emerald-300'}`} />
+              <span className="hidden sm:inline">
+                {syncStatus === 'syncing' ? 'Syncing...' : 'Cloud Sync'}
+              </span>
+            </button>
+          ) : (
+            <span className="hidden md:inline-block text-xs font-semibold text-[#4B5B52] dark:text-emerald-200/80 px-2.5 py-1">
+              Data stored on this device
             </span>
-          </button>
+          )}
 
           {/* Theme Mode Toggle Button */}
           <button

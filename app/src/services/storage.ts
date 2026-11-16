@@ -59,6 +59,8 @@ const STORAGE_KEYS = {
 };
 const PENDING_CLOUD_SYNC_KEY = 'studyflow_pending_cloud_sync';
 
+export const ENABLE_DEV_SAMPLE_DATA = false;
+
 export const defaultAttendance: AttendanceRecord[] = [];
 export const defaultAttendanceGoals: SubjectAttendanceGoal[] = [];
 
@@ -87,11 +89,32 @@ export const defaultSettings: AppSettings = {
   deviceSyncId: 'device_' + Math.random().toString(36).substring(2, 9),
 };
 
-export const defaultTasks: TaskItem[] = [];
-export const defaultNotes: NoteItem[] = [];
+export const defaultTasks: TaskItem[] = ENABLE_DEV_SAMPLE_DATA ? [
+  {
+    id: 'sample-task-1',
+    title: 'Review lecture notes',
+    dueDate: getLocalDateStr(),
+    priority: 'medium',
+    completed: false,
+    subject: 'Computer Science',
+    createdAt: new Date().toISOString(),
+  },
+] : [];
+export const defaultNotes: NoteItem[] = ENABLE_DEV_SAMPLE_DATA ? [
+  {
+    id: 'sample-note-1',
+    title: 'Week 1 Summary',
+    content: '<p>Key concepts from today’s lecture.</p>',
+    subject: 'Computer Science',
+    tags: ['lecture'],
+    isPinned: false,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+] : [];
 export const defaultAlarms: AlarmItem[] = [];
 
-export const defaultCustomTimers: CustomTimerItem[] = [
+export const defaultCustomTimers: CustomTimerItem[] = ENABLE_DEV_SAMPLE_DATA ? [
   {
     id: 'timer-pomodoro',
     name: 'Pomodoro Focus',
@@ -101,32 +124,8 @@ export const defaultCustomTimers: CustomTimerItem[] = [
     createdAt: new Date().toISOString(),
   },
   {
-    id: 'timer-deep-study',
-    name: 'Deep Study Sprint',
-    durationMinutes: 45,
-    type: 'focus',
-    colorTheme: 'emerald',
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'timer-quick-review',
-    name: 'Quick Revision',
-    durationMinutes: 15,
-    type: 'focus',
-    colorTheme: 'emerald',
-    createdAt: new Date().toISOString(),
-  },
-  {
-    id: 'timer-power-hour',
-    name: 'Power Hour',
-    durationMinutes: 60,
-    type: 'focus',
-    colorTheme: 'emerald',
-    createdAt: new Date().toISOString(),
-  },
-  {
     id: 'timer-short-break',
-    name: 'Short Break',
+    name: 'Short Break (5 min)',
     durationMinutes: 5,
     type: 'shortBreak',
     colorTheme: 'emerald',
@@ -134,15 +133,27 @@ export const defaultCustomTimers: CustomTimerItem[] = [
   },
   {
     id: 'timer-long-break',
-    name: 'Long Recharge',
+    name: 'Long Break (15 min)',
     durationMinutes: 15,
     type: 'longBreak',
     colorTheme: 'emerald',
     createdAt: new Date().toISOString(),
   },
-];
+] : [];
 
-export const defaultSchedule: ClassSchedule[] = [];
+export const defaultSchedule: ClassSchedule[] = ENABLE_DEV_SAMPLE_DATA ? [
+  {
+    id: 'sample-class-1',
+    subjectName: 'Computer Science',
+    code: 'CS101',
+    instructor: 'Dr. Rao',
+    location: 'Room 204',
+    dayOfWeek: 'Monday',
+    startTime: '10:00',
+    endTime: '11:00',
+    color: '#15803D',
+  },
+] : [];
 export const defaultSessions: FocusSession[] = [];
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>

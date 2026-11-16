@@ -420,12 +420,29 @@ interface AppContextType {
   signOut: () => Promise<void>;
   mobileMenuOpen: boolean;
   setMobileMenuOpen: (open: boolean) => void;
+  liveSession: {
+    isRunning: boolean;
+    timerName: string;
+    timerType: CustomTimerItem['type'];
+    timeLeftSeconds: number;
+    leaveCount: number;
+    completedWorkBlocks: number;
+  } | null;
+  setLiveSession: React.Dispatch<React.SetStateAction<{
+    isRunning: boolean;
+    timerName: string;
+    timerType: CustomTimerItem['type'];
+    timeLeftSeconds: number;
+    leaveCount: number;
+    completedWorkBlocks: number;
+  } | null>>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(appReducer, undefined, initializeAppState);
+  const [liveSession, setLiveSession] = React.useState<AppContextType['liveSession']>(null);
 
   const activeChimeRef = useRef<{ stop: () => void } | null>(null);
   const lastTriggeredAlarmMinuteRef = useRef<string>('');
@@ -1015,6 +1032,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       signOut: signOutOfFirebase,
       mobileMenuOpen: state.mobileMenuOpen,
       setMobileMenuOpen: (open) => dispatch({ type: 'SET_MOBILE_MENU_OPEN', payload: open }),
+      liveSession,
+      setLiveSession,
     }}>
       {children}
     </AppContext.Provider>

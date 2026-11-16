@@ -18,7 +18,8 @@ import {
 } from 'lucide-react';
 import { QuickTaskModal } from '../tasks/QuickTaskModal';
 import { calculateOverallAttendance } from '../../services/attendance';
-import { calculateWeeklyReflection } from '../../services/wellness';
+import { calculateWeeklyReflection, getNextBreakType } from '../../services/wellness';
+import { getDailyQuotes } from '../../services/dailyQuotes';
 import { getLocalDateStr } from '../../services/storage';
 import type { AttendanceStatus } from '../../types';
 
@@ -29,12 +30,26 @@ export const Dashboard: React.FC = () => {
     toggleTask, 
     schedule, 
     sessions,
+    alarms,
+    liveSession,
     setActiveTab,
     attendance,
     attendanceGoals,
     markAttendance,
   } = useApp();
   const [quickTaskOpen, setQuickTaskOpen] = React.useState(false);
+
+  const dailyQuotes = React.useMemo(() => getDailyQuotes(new Date()), []);
+  const bedtimeAlarm = alarms.find(
+    (a) => a.enabled && /wind down|bedtime/i.test(a.label),
+  );
+  const nextBreakType = getNextBreakType(liveSession?.completedWorkBlocks ?? 0);
+  const nextBreakLabel = nextBreakType === 'longBreak' ? 'Long Break (15 min)' : 'Short Break (5 min)';
+  const formatCountdown = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
 
   const priorityTasks = tasks.filter(t => !t.completed);
   const completedCount = tasks.filter(t => t.completed).length;
@@ -148,13 +163,6 @@ export const Dashboard: React.FC = () => {
                 <span>{profile.academicYear}</span>
               </div>
             )}
-            <div 
-              onClick={() => setActiveTab('attendance')}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-cyan-500/25 hover:bg-cyan-500/40 cursor-pointer backdrop-blur-md text-cyan-200 text-xs font-bold border border-cyan-400/30 shadow-xs transition-colors"
-            >
-              <CalendarCheck className="w-3.5 h-3.5" />
-              <span>Attendance: {overallAttendance.totalConducted === 0 ? '100%' : `${overallAttendance.percentage}%`}</span>
-            </div>
           </div>
 
           {/* Heading */}
@@ -168,36 +176,35 @@ export const Dashboard: React.FC = () => {
           </p>
         </div>
 
-        {/* Action Buttons inside Banner */}
+        {/* Action Button inside Banner */}
         <div className="flex flex-wrap items-center gap-3 relative z-10">
           <button
             type="button"
-            onClick={() => setQuickTaskOpen(true)}
+            onClick={() => setActiveTab('timer')}
             className="flex items-center gap-2 bg-white text-[#15803D] hover:bg-[#DCFCE7] active:scale-95 px-5 py-3 rounded-2xl font-black text-sm shadow-sm transition-all"
           >
-            <Plus className="w-4 h-4 stroke-[3]" />
-            <span>Add Task</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('attendance')}
-            className="flex items-center gap-2 bg-[#14201A]/30 hover:bg-[#14201A]/45 active:scale-95 text-white px-5 py-3 rounded-2xl font-bold text-sm border border-white/30 transition-all shadow-xs"
-          >
-            <CalendarCheck className="w-4 h-4" />
-            <span>Attendance</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab('timer')}
-            className="flex items-center gap-2 bg-white/15 hover:bg-white/25 active:scale-95 text-white px-5 py-3 rounded-2xl font-bold text-sm border border-white/30 transition-all shadow-xs"
-          >
             <Timer className="w-4 h-4" />
-            <span>Focus</span>
+            <span>Start Focus</span>
           </button>
         </div>
       </div>
+
+      {/* =========================================================================
+          1b. TODAY'S REMINDERS (CALM DAILY QUOTES)
+          ========================================================================= */}
+      <section
+        aria-label="Today’s reminders"
+        className="rounded-3xl border border-emerald-200 dark:border-emerald-800/60 bg-[#DCFCE7] dark:bg-[#13261C] p-5 sm:p-6 space-y-2"
+      >
+        <h3 className="text-sm font-black uppercase tracking-wider text-[#14532D] dark:text-[#86EFAC]">
+          Today’s reminders
+        </h3>
+        <div className="space-y-1.5 text-sm sm:text-base font-semibold text-[#14532D] dark:text-[#DCFCE7] leading-relaxed">
+          {dailyQuotes.map((quote) => (
+            <p key={quote}>{quote}</p>
+          ))}
+        </div>
+      </section>
 
       {/* =========================================================================
           2. METRICS ROW: STAT CARDS (Plain cards with soft borders)
@@ -257,8 +264,54 @@ export const Dashboard: React.FC = () => {
       </div>
 
       {/* =========================================================================
-          2b. WEEKLY REFLECTION (PAST 7 DAYS)
+          2b. LIVE SESSION CARD & WEEKLY REFLECTION (PAST 7 DAYS)
           ========================================================================= */}
+      <section aria-label="Live session" className="rounded-3xl p-5 sm:p-6 border border-emerald-200 dark:border-emerald-800/60 bg-white dark:bg-[#13261C] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        {liveSession?.isRunning && (liveSession.timerType === 'focus' || liveSession.timerType === 'custom') ? (
+          <>
+            <div className="space-y-1">
+              <span className="text-xs font-black uppercase tracking-wider text-[#15803D] dark:text-[#86EFAC]">
+                Focus Session Active
+              </span>
+              <h3 className="text-lg font-black text-[#14201A] dark:text-white font-headline">
+                {liveSession.timerName} — {formatCountdown(liveSession.timeLeftSeconds)} remaining
+              </h3>
+              <p className="text-xs font-semibold text-[#4B5B52] dark:text-emerald-200/80">
+                App leaves this session: {liveSession.leaveCount}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setActiveTab('timer')}
+              className="rounded-2xl bg-[#15803D] hover:bg-[#166534] text-white px-4 py-2.5 text-xs font-black shrink-0"
+            >
+              View Timer
+            </button>
+          </>
+        ) : (
+          <>
+            <div className="space-y-1">
+              <span className="text-xs font-black uppercase tracking-wider text-[#15803D] dark:text-[#86EFAC]">
+                Session Status
+              </span>
+              <h3 className="text-base sm:text-lg font-black text-[#14201A] dark:text-white font-headline">
+                Next break: {nextBreakLabel}
+              </h3>
+              <p className="text-xs font-semibold text-[#4B5B52] dark:text-emerald-200/80">
+                Bedtime wind-down: {bedtimeAlarm ? `${bedtimeAlarm.time} (${bedtimeAlarm.repeat === 'daily' ? 'Daily' : 'Once'})` : 'Not set'}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setActiveTab('timer')}
+              className="rounded-2xl border border-emerald-200 dark:border-emerald-700 bg-[#DCFCE7]/60 dark:bg-emerald-950/50 text-[#14532D] dark:text-emerald-200 hover:bg-[#DCFCE7] px-4 py-2.5 text-xs font-black shrink-0"
+            >
+              Open Focus & Alarms
+            </button>
+          </>
+        )}
+      </section>
+
       <section aria-label="Weekly reflection" className="rounded-3xl p-5 sm:p-6 border border-emerald-200 dark:border-emerald-800/60 bg-white dark:bg-[#13261C] shadow-sm space-y-4">
         <div className="flex items-center justify-between">
           <div>
@@ -275,24 +328,40 @@ export const Dashboard: React.FC = () => {
           </button>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="rounded-2xl border border-emerald-100 dark:border-emerald-800/50 bg-[#DCFCE7]/50 dark:bg-emerald-950/40 p-4">
-            <span className="text-[11px] font-bold text-[#4B5B52] dark:text-emerald-200 block">Planned Focus Sessions</span>
-            <span className="text-2xl font-black text-[#14201A] dark:text-white font-headline mt-1 block">{weeklyReflection.plannedSessions}</span>
+        {weeklyReflection.plannedSessions === 0 && weeklyReflection.breaksTaken === 0 ? (
+          <div className="rounded-2xl border border-dashed border-emerald-200 dark:border-emerald-800/60 bg-[#DCFCE7]/35 dark:bg-emerald-950/30 p-6 text-center space-y-3">
+            <p className="text-sm font-semibold text-[#14201A] dark:text-emerald-100">
+              No focus sessions recorded in the past 7 days yet.
+            </p>
+            <button
+              type="button"
+              onClick={() => setActiveTab('timer')}
+              className="inline-flex items-center gap-2 rounded-2xl bg-[#15803D] hover:bg-[#166534] text-white px-5 py-2.5 text-xs font-black transition-colors"
+            >
+              <Timer className="w-4 h-4" />
+              <span>Start a focus session</span>
+            </button>
           </div>
-          <div className="rounded-2xl border border-emerald-100 dark:border-emerald-800/50 bg-[#DCFCE7]/50 dark:bg-emerald-950/40 p-4">
-            <span className="text-[11px] font-bold text-[#4B5B52] dark:text-emerald-200 block">Completed Focus Sessions</span>
-            <span className="text-2xl font-black text-[#14201A] dark:text-white font-headline mt-1 block">{weeklyReflection.completedSessions}</span>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="rounded-2xl border border-emerald-100 dark:border-emerald-800/50 bg-[#DCFCE7]/50 dark:bg-emerald-950/40 p-4">
+              <span className="text-[11px] font-bold text-[#4B5B52] dark:text-emerald-200 block">Planned Focus Sessions</span>
+              <span className="text-2xl font-black text-[#14201A] dark:text-white font-headline mt-1 block">{weeklyReflection.plannedSessions}</span>
+            </div>
+            <div className="rounded-2xl border border-emerald-100 dark:border-emerald-800/50 bg-[#DCFCE7]/50 dark:bg-emerald-950/40 p-4">
+              <span className="text-[11px] font-bold text-[#4B5B52] dark:text-emerald-200 block">Completed Focus Sessions</span>
+              <span className="text-2xl font-black text-[#14201A] dark:text-white font-headline mt-1 block">{weeklyReflection.completedSessions}</span>
+            </div>
+            <div className="rounded-2xl border border-emerald-100 dark:border-emerald-800/50 bg-[#DCFCE7]/50 dark:bg-emerald-950/40 p-4">
+              <span className="text-[11px] font-bold text-[#4B5B52] dark:text-emerald-200 block">Total Focus Minutes</span>
+              <span className="text-2xl font-black text-[#14201A] dark:text-white font-headline mt-1 block">{weeklyReflection.totalFocusMinutes}</span>
+            </div>
+            <div className="rounded-2xl border border-emerald-100 dark:border-emerald-800/50 bg-[#DCFCE7]/50 dark:bg-emerald-950/40 p-4">
+              <span className="text-[11px] font-bold text-[#4B5B52] dark:text-emerald-200 block">Breaks Taken</span>
+              <span className="text-2xl font-black text-[#14201A] dark:text-white font-headline mt-1 block">{weeklyReflection.breaksTaken}</span>
+            </div>
           </div>
-          <div className="rounded-2xl border border-emerald-100 dark:border-emerald-800/50 bg-[#DCFCE7]/50 dark:bg-emerald-950/40 p-4">
-            <span className="text-[11px] font-bold text-[#4B5B52] dark:text-emerald-200 block">Total Focus Minutes</span>
-            <span className="text-2xl font-black text-[#14201A] dark:text-white font-headline mt-1 block">{weeklyReflection.totalFocusMinutes}</span>
-          </div>
-          <div className="rounded-2xl border border-emerald-100 dark:border-emerald-800/50 bg-[#DCFCE7]/50 dark:bg-emerald-950/40 p-4">
-            <span className="text-[11px] font-bold text-[#4B5B52] dark:text-emerald-200 block">Breaks Taken</span>
-            <span className="text-2xl font-black text-[#14201A] dark:text-white font-headline mt-1 block">{weeklyReflection.breaksTaken}</span>
-          </div>
-        </div>
+        )}
       </section>
 
       {/* =========================================================================
