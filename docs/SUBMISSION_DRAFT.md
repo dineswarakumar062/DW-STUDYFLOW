@@ -34,6 +34,12 @@ University students often check their phones during planned study sessions and s
 | **5** | **UI contrast bug on Tasks & Notes sliding pill** (Author/user testing caught invisible `To-Do (0)` tab) | After removing legacy orange/indigo CSS classes, `.liquid-orange-pill` lost its background, leaving white `To-Do (0)` text invisible on a white background. | Replaced `.liquid-orange-pill` and active filter pills in `NotesAndTasks.tsx` with `bg-[#15803D]` so active tabs and labels maintain >= 4.5:1 contrast. |
 | **6** | **Uncontrolled focus-to-focus flow & visual clutter** | Finishing a timer logged a session without enforcing a break or counting app leaves; UI used bright indigo/orange gradients. | Added an enforced full-screen break screen (`shortBreak` / `longBreak`), neutral leave-count summary, optional focus intention, "End early" option, and a calm green-and-white theme (`#FFFFFF` / `#0F1F17`, `#15803D`). |
 
+### Final Prototype Screenshots (After Revisions)
+
+| Dashboard | Wellness Activity | Focus Timer | Tasks & Notes |
+|---|---|---|---|
+| ![Dashboard](screenshots/dashboard-mobile.png) | ![Activity](screenshots/activity-mobile.png) | ![Focus Timer](screenshots/timer-mobile.png) | ![Tasks & Notes](screenshots/notes-mobile.png) |
+
 ---
 
 ## 3. Hand-Drawn Wireframe Guide (Draw on Paper & Photograph)
