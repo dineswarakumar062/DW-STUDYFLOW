@@ -21,6 +21,14 @@ import {
   TrendingUp
 } from 'lucide-react';
 import { cancelTimerNotification, notifyTimerComplete, scheduleTimerNotification } from '../../services/notifications';
+import { App as CapacitorApp } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
+import {
+  formatLeaveCountMessage,
+  getBreakDurationMinutes,
+  getNextBreakType,
+  shouldCountLeave,
+} from '../../services/wellness';
 
 const getThemeClass = (colorTheme: TimerColorTheme) => {
   switch (colorTheme) {
@@ -88,6 +96,15 @@ export const TimerAndAlarm: React.FC = () => {
 
   const [timeLeft, setTimeLeft] = useState<number>(activeTimer.durationMinutes * 60);
   const [isRunning, setIsRunning] = useState(false);
+  const [leaveCount, setLeaveCount] = useState(0);
+  const [completedWorkBlocks, setCompletedWorkBlocks] = useState(0);
+  const [breakScreen, setBreakScreen] = useState<{
+    type: 'shortBreak' | 'longBreak';
+    totalSeconds: number;
+    secondsLeft: number;
+    lastLeaveCount: number;
+    startedAt: string;
+  } | null>(null);
 
   // Modal State for Add / Edit Timer
   const [timerModalOpen, setTimerModalOpen] = useState(false);
@@ -106,14 +123,51 @@ export const TimerAndAlarm: React.FC = () => {
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const targetEndTimeRef = useRef<number | null>(null);
+  const breakEndTimeRef = useRef<number | null>(null);
+  const sessionStartTimeRef = useRef<string | null>(null);
+  const leaveCountRef = useRef<number>(0);
   const notificationIdRef = useRef(0);
 
   // Sync timer when activeTimer changes
   useEffect(() => {
     targetEndTimeRef.current = null;
+    sessionStartTimeRef.current = null;
+    leaveCountRef.current = 0;
+    setLeaveCount(0);
     setTimeLeft(activeTimer.durationMinutes * 60);
     setIsRunning(false);
   }, [activeTimer.id, activeTimer.durationMinutes]);
+
+  // Phone-drift counter: count background transitions only while a focus session is running
+  useEffect(() => {
+    if (!shouldCountLeave(isRunning, activeTimer.type)) return;
+
+    const recordLeave = () => {
+      leaveCountRef.current += 1;
+      setLeaveCount(leaveCountRef.current);
+    };
+
+    if (Capacitor.isNativePlatform()) {
+      const listenerPromise = CapacitorApp.addListener('appStateChange', ({ isActive }) => {
+        if (!isActive) {
+          recordLeave();
+        }
+      });
+      return () => {
+        void listenerPromise.then(handle => handle.remove()).catch(() => {});
+      };
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        recordLeave();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [isRunning, activeTimer.type]);
 
   // Web Audio Alarm Chime
   const playAlarmSound = useCallback(() => {
@@ -162,13 +216,43 @@ export const TimerAndAlarm: React.FC = () => {
             void notifyTimerComplete(activeTimer.name);
           }
 
-          // Log session if focus type
+          // Log session if focus type and enforce break screen
           if (activeTimer.type === 'focus' || activeTimer.type === 'custom') {
+            const sessionLeaves = leaveCountRef.current;
+            const startedAt = sessionStartTimeRef.current || new Date(Date.now() - activeTimer.durationMinutes * 60000).toISOString();
             logSession({
               subject: activeTimer.name,
               durationMinutes: activeTimer.durationMinutes,
+              startedAt,
+              leaveCount: sessionLeaves,
               type: 'pomodoro',
             });
+            sessionStartTimeRef.current = null;
+            leaveCountRef.current = 0;
+            setLeaveCount(0);
+
+            const nextWorkCount = completedWorkBlocks + 1;
+            setCompletedWorkBlocks(nextWorkCount);
+            const breakType = getNextBreakType(nextWorkCount);
+            const breakMins = getBreakDurationMinutes(breakType, settings.shortBreakMinutes, 15);
+            const breakSecs = breakMins * 60;
+            breakEndTimeRef.current = Date.now() + breakSecs * 1000;
+            setBreakScreen({
+              type: breakType,
+              totalSeconds: breakSecs,
+              secondsLeft: breakSecs,
+              lastLeaveCount: sessionLeaves,
+              startedAt: new Date().toISOString(),
+            });
+          } else if (activeTimer.type === 'shortBreak' || activeTimer.type === 'longBreak') {
+            logSession({
+              subject: activeTimer.name,
+              durationMinutes: activeTimer.durationMinutes,
+              startedAt: sessionStartTimeRef.current || undefined,
+              breakSkipped: false,
+              type: activeTimer.type,
+            });
+            sessionStartTimeRef.current = null;
           }
           setTimeLeft(0);
         }
@@ -180,16 +264,63 @@ export const TimerAndAlarm: React.FC = () => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [isRunning, activeTimer.name, activeTimer.durationMinutes, activeTimer.type, logSession, playAlarmSound, settings.notificationsEnabled]);
+  }, [isRunning, activeTimer.name, activeTimer.durationMinutes, activeTimer.type, completedWorkBlocks, logSession, playAlarmSound, settings.notificationsEnabled, settings.shortBreakMinutes]);
+
+  // Enforced break countdown effect
+  useEffect(() => {
+    if (!breakScreen) return;
+    if (!breakEndTimeRef.current) {
+      breakEndTimeRef.current = Date.now() + breakScreen.secondsLeft * 1000;
+    }
+    const interval = setInterval(() => {
+      if (!breakEndTimeRef.current) return;
+      const remaining = Math.max(0, Math.ceil((breakEndTimeRef.current - Date.now()) / 1000));
+      if (remaining <= 0) {
+        clearInterval(interval);
+        breakEndTimeRef.current = null;
+        playAlarmSound();
+        logSession({
+          subject: breakScreen.type === 'longBreak' ? 'Long Break' : 'Short Break',
+          durationMinutes: Math.max(1, Math.round(breakScreen.totalSeconds / 60)),
+          startedAt: breakScreen.startedAt,
+          breakSkipped: false,
+          type: breakScreen.type,
+        });
+        setBreakScreen(null);
+        setTimeLeft(activeTimer.durationMinutes * 60);
+      } else {
+        setBreakScreen(prev => (prev ? { ...prev, secondsLeft: remaining } : null));
+      }
+    }, 500);
+    return () => clearInterval(interval);
+  }, [breakScreen, activeTimer.durationMinutes, logSession, playAlarmSound]);
+
+  const handleSkipBreak = useCallback(() => {
+    if (!breakScreen) return;
+    breakEndTimeRef.current = null;
+    logSession({
+      subject: breakScreen.type === 'longBreak' ? 'Long Break' : 'Short Break',
+      durationMinutes: 0,
+      startedAt: breakScreen.startedAt,
+      breakSkipped: true,
+      type: breakScreen.type,
+    });
+    setBreakScreen(null);
+    setTimeLeft(activeTimer.durationMinutes * 60);
+  }, [breakScreen, activeTimer.durationMinutes, logSession]);
 
   const handleReset = () => {
     targetEndTimeRef.current = null;
+    sessionStartTimeRef.current = null;
+    leaveCountRef.current = 0;
+    setLeaveCount(0);
     setIsRunning(false);
     if (notificationIdRef.current) void cancelTimerNotification(notificationIdRef.current);
     setTimeLeft(activeTimer.durationMinutes * 60);
   };
 
   const handleRunToggle = async () => {
+    if (breakScreen) return;
     if (isRunning) {
       targetEndTimeRef.current = null;
       if (notificationIdRef.current) await cancelTimerNotification(notificationIdRef.current);
@@ -197,6 +328,11 @@ export const TimerAndAlarm: React.FC = () => {
       return;
     }
 
+    if (!sessionStartTimeRef.current) {
+      sessionStartTimeRef.current = new Date().toISOString();
+      leaveCountRef.current = 0;
+      setLeaveCount(0);
+    }
     targetEndTimeRef.current = Date.now() + timeLeft * 1000;
     if (settings.notificationsEnabled) {
       notificationIdRef.current = Date.now() % 2147483647;
@@ -361,25 +497,41 @@ export const TimerAndAlarm: React.FC = () => {
           </div>
           
           {alarmFormOpen && (
-            <div className="grid grid-cols-1 gap-3 rounded-2xl bg-white/85 dark:bg-slate-800/85 p-4 border border-sky-200/60 dark:border-slate-700 shadow-xs sm:grid-cols-[1fr_auto_auto_auto] sm:items-end relative z-10">
-              <label className="text-xs font-bold text-slate-500 dark:text-slate-400">
-                Alarm name
-                <input value={alarmLabel} onChange={event => setAlarmLabel(event.target.value)} className="glass-input mt-1" placeholder="Study reminder" />
-              </label>
-              <label className="text-xs font-bold text-slate-500 dark:text-slate-400">
-                Time
-                <input type="time" value={alarmTime} onChange={event => setAlarmTime(event.target.value)} className="glass-input mt-1" />
-              </label>
-              <label className="text-xs font-bold text-slate-500 dark:text-slate-400">
-                Repeat
-                <select value={alarmRepeat} onChange={event => setAlarmRepeat(event.target.value as 'once' | 'daily')} className="glass-input mt-1">
-                  <option value="daily">Daily</option>
-                  <option value="once">Once</option>
-                </select>
-              </label>
-              <button type="button" onClick={saveAlarm} className="glass-primary-button inline-flex items-center justify-center gap-1 rounded-full px-4 py-2.5 text-xs font-black">
-                <Plus className="h-4 w-4" />{editingAlarmId ? 'Save' : 'Add'}
-              </button>
+            <div className="space-y-3 rounded-2xl bg-white/85 dark:bg-slate-800/85 p-4 border border-sky-200/60 dark:border-slate-700 shadow-xs relative z-10">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-xs font-bold text-slate-600 dark:text-slate-300">Presets:</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAlarmLabel('Time to wind down. Put study and scrolling away.');
+                    setAlarmTime('22:00');
+                    setAlarmRepeat('daily');
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-200 border border-emerald-200 dark:border-emerald-800 px-3 py-1 text-xs font-bold hover:bg-emerald-100 dark:hover:bg-emerald-900/60 transition-colors"
+                >
+                  Bedtime wind-down
+                </button>
+              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto_auto_auto] sm:items-end">
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400">
+                  Alarm name
+                  <input value={alarmLabel} onChange={event => setAlarmLabel(event.target.value)} className="glass-input mt-1" placeholder="Study reminder" />
+                </label>
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400">
+                  Time
+                  <input type="time" value={alarmTime} onChange={event => setAlarmTime(event.target.value)} className="glass-input mt-1" />
+                </label>
+                <label className="text-xs font-bold text-slate-500 dark:text-slate-400">
+                  Repeat
+                  <select value={alarmRepeat} onChange={event => setAlarmRepeat(event.target.value as 'once' | 'daily')} className="glass-input mt-1">
+                    <option value="daily">Daily</option>
+                    <option value="once">Once</option>
+                  </select>
+                </label>
+                <button type="button" onClick={saveAlarm} className="glass-primary-button inline-flex items-center justify-center gap-1 rounded-full px-4 py-2.5 text-xs font-black">
+                  <Plus className="h-4 w-4" />{editingAlarmId ? 'Save' : 'Add'}
+                </button>
+              </div>
             </div>
           )}
 
@@ -510,6 +662,9 @@ export const TimerAndAlarm: React.FC = () => {
                   {/* Progress Indicator */}
                   <div className="text-[11px] font-extrabold text-slate-600 dark:text-slate-300">
                     {elapsedPercent}% elapsed ({Math.ceil(timeLeft / 60)}m left)
+                    {(activeTimer.type === 'focus' || activeTimer.type === 'custom') && (isRunning || leaveCount > 0) && (
+                      <span className="block mt-0.5 text-[10px]">App leaves: {leaveCount}</span>
+                    )}
                   </div>
 
                 </div>
@@ -738,11 +893,14 @@ export const TimerAndAlarm: React.FC = () => {
                         <h4 className="font-bold text-slate-900 dark:text-white text-sm">{s.subject}</h4>
                         <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                           {new Date(s.completedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {new Date(s.completedAt).toLocaleDateString()}
+                          {typeof s.leaveCount === 'number' && (s.type === 'pomodoro' || s.type === 'stopwatch') && (
+                            <> • {s.leaveCount} {s.leaveCount === 1 ? 'leave' : 'leaves'}</>
+                          )}
                         </span>
                       </div>
                     </div>
-                    <span className="font-black text-orange-600 font-headline text-base">
-                      +{s.durationMinutes} mins
+                    <span className="font-black text-emerald-700 dark:text-emerald-300 font-headline text-base">
+                      {s.breakSkipped ? 'Skipped' : `+${s.durationMinutes} mins`}
                     </span>
                   </div>
                 ))}
@@ -889,6 +1047,54 @@ export const TimerAndAlarm: React.FC = () => {
 
             </form>
 
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          FULL-SCREEN ENFORCED BREAK OVERLAY
+          ========================================================================= */}
+      {breakScreen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="break-screen-title"
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              handleSkipBreak();
+            }
+          }}
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-white dark:bg-[#0F1F17] p-6 text-center"
+        >
+          <div className="max-w-md w-full space-y-6 rounded-3xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-950/40 p-8 shadow-xl">
+            <div className="mx-auto w-14 h-14 rounded-2xl bg-emerald-100 dark:bg-emerald-900/60 text-[#15803D] dark:text-emerald-300 flex items-center justify-center">
+              <Coffee className="w-7 h-7" />
+            </div>
+
+            <div className="space-y-2">
+              <span className="inline-block rounded-full bg-[#DCFCE7] dark:bg-emerald-900/70 px-3 py-1 text-xs font-black uppercase tracking-wider text-[#15803D] dark:text-emerald-200">
+                {breakScreen.type === 'longBreak' ? 'Long Break' : 'Short Break'}
+              </span>
+              <h2 id="break-screen-title" className="text-3xl font-black text-[#14201A] dark:text-white font-headline">
+                {formatTime(breakScreen.secondsLeft)}
+              </h2>
+              <p className="text-base font-bold text-[#14201A] dark:text-emerald-100">
+                Stretch, drink water, leave your phone face-down.
+              </p>
+            </div>
+
+            <div className="rounded-2xl bg-white/90 dark:bg-slate-900/70 border border-emerald-200/80 dark:border-emerald-800/60 p-4 text-xs font-semibold text-[#4B5B52] dark:text-emerald-200">
+              {formatLeaveCountMessage(breakScreen.lastLeaveCount)}
+            </div>
+
+            <button
+              type="button"
+              autoFocus
+              onClick={handleSkipBreak}
+              className="w-full rounded-2xl border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-slate-900 px-5 py-3 text-sm font-black text-[#15803D] dark:text-emerald-300 hover:bg-[#DCFCE7] dark:hover:bg-emerald-950 transition-colors"
+            >
+              Skip break
+            </button>
           </div>
         </div>
       )}

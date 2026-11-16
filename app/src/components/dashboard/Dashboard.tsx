@@ -14,12 +14,12 @@ import {
   X,
   Ban,
   CalendarOff,
-  ArrowRight,
-  AlertTriangle
+  ArrowRight
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { QuickTaskModal } from '../tasks/QuickTaskModal';
 import { calculateOverallAttendance } from '../../services/attendance';
+import { calculateWeeklyReflection } from '../../services/wellness';
 import { getLocalDateStr } from '../../services/storage';
 import type { AttendanceStatus } from '../../types';
 
@@ -29,6 +29,7 @@ export const Dashboard: React.FC = () => {
     tasks, 
     toggleTask, 
     schedule, 
+    sessions,
     setActiveTab,
     attendance,
     attendanceGoals,
@@ -40,8 +41,9 @@ export const Dashboard: React.FC = () => {
   const completedCount = tasks.filter(t => t.completed).length;
   const completionRate = tasks.length > 0 ? Math.round((completedCount / tasks.length) * 100) : 0;
 
-  // Attendance metrics
+  // Attendance & Weekly Reflection metrics
   const overallAttendance = calculateOverallAttendance(schedule, attendance, attendanceGoals);
+  const weeklyReflection = calculateWeeklyReflection(sessions);
   const todayIso = getLocalDateStr();
 
   const formatDueDate = (dateStr: string, timeStr?: string) => {
@@ -269,6 +271,45 @@ export const Dashboard: React.FC = () => {
         </div>
 
       </div>
+
+      {/* =========================================================================
+          2b. WEEKLY REFLECTION (PAST 7 DAYS)
+          ========================================================================= */}
+      <section aria-label="Weekly reflection" className="rounded-3xl p-5 sm:p-6 border border-emerald-200 dark:border-emerald-800/60 bg-white dark:bg-[#13261C] shadow-sm space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-black text-[#14201A] dark:text-white font-headline">Weekly Reflection</h3>
+            <p className="text-xs font-medium text-[#4B5B52] dark:text-emerald-200/80">Past 7 days of focus sessions and breaks</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setActiveTab('timer')}
+            className="text-xs font-bold text-[#15803D] dark:text-emerald-300 hover:underline flex items-center gap-1"
+          >
+            <span>Open Timer</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="rounded-2xl border border-emerald-100 dark:border-emerald-800/50 bg-[#DCFCE7]/50 dark:bg-emerald-950/40 p-4">
+            <span className="text-[11px] font-bold text-[#4B5B52] dark:text-emerald-200 block">Planned Focus Sessions</span>
+            <span className="text-2xl font-black text-[#14201A] dark:text-white font-headline mt-1 block">{weeklyReflection.plannedSessions}</span>
+          </div>
+          <div className="rounded-2xl border border-emerald-100 dark:border-emerald-800/50 bg-[#DCFCE7]/50 dark:bg-emerald-950/40 p-4">
+            <span className="text-[11px] font-bold text-[#4B5B52] dark:text-emerald-200 block">Completed Focus Sessions</span>
+            <span className="text-2xl font-black text-[#14201A] dark:text-white font-headline mt-1 block">{weeklyReflection.completedSessions}</span>
+          </div>
+          <div className="rounded-2xl border border-emerald-100 dark:border-emerald-800/50 bg-[#DCFCE7]/50 dark:bg-emerald-950/40 p-4">
+            <span className="text-[11px] font-bold text-[#4B5B52] dark:text-emerald-200 block">Total Focus Minutes</span>
+            <span className="text-2xl font-black text-[#14201A] dark:text-white font-headline mt-1 block">{weeklyReflection.totalFocusMinutes}</span>
+          </div>
+          <div className="rounded-2xl border border-emerald-100 dark:border-emerald-800/50 bg-[#DCFCE7]/50 dark:bg-emerald-950/40 p-4">
+            <span className="text-[11px] font-bold text-[#4B5B52] dark:text-emerald-200 block">Breaks Taken</span>
+            <span className="text-2xl font-black text-[#14201A] dark:text-white font-headline mt-1 block">{weeklyReflection.breaksTaken}</span>
+          </div>
+        </div>
+      </section>
 
       {/* =========================================================================
           3. MAIN CONTENT: Today's Schedule (Left) + Priority Tasks & Attendance (Right)
@@ -562,33 +603,22 @@ export const Dashboard: React.FC = () => {
                 />
               </div>
 
-              {/* Status Alert Banner */}
-              {overallAttendance.percentage < 75 && overallAttendance.totalConducted > 0 ? (
-                <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-900/50 flex items-start gap-2.5 mt-2">
-                  <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-                  <div className="text-xs">
-                    <p className="font-bold text-amber-800 dark:text-amber-300">Below 75% Target</p>
-                    <p className="text-amber-700 dark:text-amber-400/90 mt-0.5">
-                      Attend next classes regularly to restore your target standing without missing exams.
-                    </p>
-                  </div>
+              {/* Plain Attendance Summary */}
+              <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900/50 flex items-center justify-between text-xs mt-2">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-[#15803D] dark:text-emerald-400 shrink-0" />
+                  <span className="font-bold text-[#14201A] dark:text-emerald-200">
+                    Current attendance: {overallAttendance.totalConducted === 0 ? '100%' : `${overallAttendance.percentage}%`}. Minimum required: 75%.
+                  </span>
                 </div>
-              ) : (
-                <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-900/50 flex items-center justify-between text-xs mt-2">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                    <span className="font-bold text-emerald-800 dark:text-emerald-300">
-                      {overallAttendance.totalConducted === 0 ? 'Ready for semester start' : 'Safe & On Track (>75%)'}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => setActiveTab('attendance')}
-                    className="font-black text-emerald-700 dark:text-emerald-300 hover:underline"
-                  >
-                    View Subjects →
-                  </button>
-                </div>
-              )}
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('attendance')}
+                  className="font-black text-[#15803D] dark:text-emerald-300 hover:underline shrink-0 ml-2"
+                >
+                  View Subjects →
+                </button>
+              </div>
             </div>
 
           </div>

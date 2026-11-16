@@ -18,7 +18,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Calendar,
-  AlertTriangle,
   Sliders,
   Info,
   Clock,
@@ -220,11 +219,7 @@ export const Attendance: React.FC = () => {
                     : 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800/50'
                 }`}
               >
-                {overall.percentage >= 75
-                  ? '75%+ Safe Target'
-                  : overall.percentage >= 65
-                  ? 'At Risk (Below 75%)'
-                  : 'Critical Shortage'}
+                {`Current attendance: ${overall.totalConducted === 0 ? 100 : overall.percentage}%. Minimum required: 75%.`}
               </span>
             </div>
 
@@ -233,9 +228,8 @@ export const Attendance: React.FC = () => {
             </p>
 
             {overall.atRiskSubjectsCount > 0 && (
-              <p className="text-xs text-rose-600 dark:text-rose-400 font-bold mt-1.5 flex items-center justify-center sm:justify-start gap-1">
-                <AlertTriangle className="w-3.5 h-3.5" />
-                {overall.atRiskSubjectsCount} {overall.atRiskSubjectsCount === 1 ? 'subject' : 'subjects'} currently below minimum 75% criteria.
+              <p className="text-xs text-[#4B5B52] dark:text-emerald-200 font-semibold mt-1.5">
+                {overall.atRiskSubjectsCount} {overall.atRiskSubjectsCount === 1 ? "subject is" : "subjects are"} below 75%.
               </p>
             )}
           </div>
@@ -633,18 +627,12 @@ export const Attendance: React.FC = () => {
                   {/* Reachability Advice */}
                   <div className="mt-3.5 p-3 rounded-2xl bg-white/80 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60 text-xs">
                     {stats.percentage >= stats.targetPercentage ? (
-                      <p className="text-emerald-700 dark:text-emerald-300 font-bold flex items-center gap-1.5">
-                        <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-500" />
-                        <span>
-                          Safe! You can miss up to <strong>{stats.safeToMiss}</strong> more {stats.safeToMiss === 1 ? 'class' : 'classes'} and still stay above {stats.targetPercentage}%.
-                        </span>
+                      <p className="text-[#14201A] dark:text-emerald-200 font-semibold">
+                        Current attendance: <strong>{stats.percentage}%</strong>. Minimum required: <strong>{stats.targetPercentage}%</strong>. Buffer: {stats.safeToMiss} {stats.safeToMiss === 1 ? "class" : "classes"}.
                       </p>
                     ) : (
-                      <p className="text-rose-700 dark:text-rose-300 font-bold flex items-center gap-1.5">
-                        <AlertTriangle className="w-4 h-4 shrink-0 text-rose-500" />
-                        <span>
-                          Action needed! Attend the next <strong>{stats.neededToAttend}</strong> {stats.neededToAttend === 1 ? 'class' : 'classes'} in a row to reach {stats.targetPercentage}%.
-                        </span>
+                      <p className="text-[#14201A] dark:text-emerald-200 font-semibold">
+                        Current attendance: <strong>{stats.percentage}%</strong>. Minimum required: <strong>{stats.targetPercentage}%</strong>. ({stats.neededToAttend} {stats.neededToAttend === 1 ? "class" : "classes"} to reach {stats.targetPercentage}%.)
                       </p>
                     )}
                   </div>

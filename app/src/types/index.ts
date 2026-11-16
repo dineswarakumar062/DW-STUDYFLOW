@@ -61,7 +61,10 @@ export interface FocusSession {
   id: string;
   subject: string;
   durationMinutes: number;
+  startedAt?: string;
   completedAt: string;
+  leaveCount?: number;
+  breakSkipped?: boolean;
   type: 'pomodoro' | 'shortBreak' | 'longBreak' | 'stopwatch';
 }
 

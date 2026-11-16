@@ -533,7 +533,9 @@ export const storage = {
         const sanitizedSessions: FocusSession[] = (parsed.sessions as FocusSession[]).map((s) => ({
           ...s,
           subject: sanitizeText(s.subject),
-          durationMinutes: Math.max(1, Number(s.durationMinutes) || 25),
+          durationMinutes: Math.max(0, Number(s.durationMinutes) || 0),
+          leaveCount: typeof s.leaveCount === 'number' ? Math.max(0, s.leaveCount) : undefined,
+          breakSkipped: typeof s.breakSkipped === 'boolean' ? s.breakSkipped : undefined,
         }));
         storage.saveSessions(sanitizedSessions, opts);
       }
