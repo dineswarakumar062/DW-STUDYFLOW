@@ -66,15 +66,17 @@ Based on the original **studyzflow** project by **Dineswarkumar**: [https://gith
   </tr>
 </table>
 
-### 📱 Android
+### 📱 Android / Mobile
 
 <p align="center">
-  <img src="docs/screenshots/dashboard-mobile.png" alt="Mobile Dashboard" width="300" />
-  &nbsp;&nbsp;&nbsp;
-  <img src="docs/screenshots/timer-mobile.png" alt="Mobile Focus Timer" width="300" />
-  &nbsp;&nbsp;&nbsp;
-  <img src="https://github.com/user-attachments/assets/8f8d444a-5cec-4752-81b6-7fca6cfb2ec8" alt="Mobile Attendance Tracker" width="300" />
-  <br/><sub><b>Dashboard</b> &nbsp;•&nbsp; <b>3D Liquid Focus Timer</b> &nbsp;•&nbsp; <b>Attendance Tracker</b></sub>
+  <img src="docs/screenshots/dashboard-mobile.png" alt="Mobile Dashboard" width="220" />
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/activity-mobile.png" alt="Mobile Wellness Activity" width="220" />
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/timer-mobile.png" alt="Mobile Focus Timer" width="220" />
+  &nbsp;&nbsp;
+  <img src="docs/screenshots/notes-mobile.png" alt="Mobile Tasks and Notes" width="220" />
+  <br/><sub><b>Dashboard</b> &nbsp;•&nbsp; <b>Wellness Activity</b> &nbsp;•&nbsp; <b>Focus Timer</b> &nbsp;•&nbsp; <b>Tasks &amp; Notes</b></sub>
 </p>
 
 ---
