@@ -504,7 +504,7 @@ export const NotesAndTasks: React.FC = () => {
         {/* Floating Sliding Pill Control */}
         <div className="relative flex items-center p-1.5 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-md max-w-xs w-full">
           <div 
-            className={`absolute top-1.5 bottom-1.5 left-1.5 w-[calc(50%-6px)] rounded-full liquid-orange-pill text-white transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
+            className={`absolute top-1.5 bottom-1.5 left-1.5 w-[calc(50%-6px)] rounded-full bg-[#15803D] text-white shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
               activeSubTab === 'notes' ? 'translate-x-0' : 'translate-x-full'
             }`}
           />
@@ -535,12 +535,12 @@ export const NotesAndTasks: React.FC = () => {
           <div className="flex items-center gap-1.5 overflow-x-auto py-1 max-w-full">
             {(activeSubTab === 'tasks'
               ? (['all', 'high', 'overdue', 'completed'] as TaskFilter[]).map(filter => (
-              <button key={filter} onClick={() => setTaskFilter(filter)} className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${taskFilter === filter ? 'bg-[#4338ca] text-white shadow-xs' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700'}`}>
+              <button key={filter} onClick={() => setTaskFilter(filter)} className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${taskFilter === filter ? 'bg-[#15803D] text-white shadow-xs' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700'}`}>
                 {filter === 'high' ? 'High Priority' : filter[0].toUpperCase() + filter.slice(1)}
               </button>
             ))
               : (['all', 'general', 'important', 'pinned'] as NoteFilter[]).map(filter => (
-                <button key={filter} onClick={() => setNoteFilter(filter)} className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${noteFilter === filter ? 'bg-[#4338ca] text-white shadow-xs' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700'}`}>
+                <button key={filter} onClick={() => setNoteFilter(filter)} className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${noteFilter === filter ? 'bg-[#15803D] text-white shadow-xs' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700'}`}>
                   {filter === 'pinned' ? '📌 Pinned' : filter === 'important' ? '⭐ Important' : filter[0].toUpperCase() + filter.slice(1)}
                 </button>
               )))}
