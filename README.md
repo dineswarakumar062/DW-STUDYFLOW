@@ -1,13 +1,40 @@
 <p align="center">
-  <img src="app/public/logo.svg" alt="studyzflow logo" width="120" />
+  <img src="app/public/logo.svg" alt="Digital Wellness Project logo" width="120" />
 </p>
 
-# studyzflow 🎓⚡
+# Digital Wellness Project
 
-**studyzflow** is an intelligent, modern academic productivity suite built with React 19, TypeScript, Tailwind CSS, and Capacitor for Android (Android 13+) and Web.
+**Digital Wellness Project** (built on top of **studyzflow**) is a calm, offline-first digital wellness study planner built with React 19, TypeScript, Tailwind CSS, and Capacitor for Android (Android 13+) and Web.
 
-🌐 **Live Web App:** [studyzflow.vercel.app](https://studyzflow.vercel.app/)
+## Wellness Problem Addressed
 
+Students frequently check their phones during planned study sessions, fragmenting attention and making it harder to sustain deep focus. This app addresses phone-drift and study-related screen fatigue by tracking background app leaves neutrally during focus sessions, enforcing restorative breaks between work blocks, offering a daily bedtime wind-down alarm, and summarizing weekly focus reflection metrics on-device without streaks, social comparisons, or cloud tracking.
+
+---
+
+## Changes from the original
+
+### Removed / Disabled
+- **Dashboard streak counter:** Removed the streak metric card and streak calculation from `Dashboard.tsx`.
+- **GPA card and Target GPA field:** Removed the Target GPA card from the dashboard, `targetGpa` from `StudentProfile` in `types/index.ts`, and the Target GPA input from `Profile.tsx`.
+- **Firebase cloud sync:** Disabled cloud sync by default with `ENABLE_CLOUD_SYNC = false` in `services/firebaseSync.ts` and hid the Cloud Sync & Backup section in `Settings.tsx` so no sync calls run unless enabled.
+- **Gemini timetable scanner:** Removed `AITimetableModal.tsx`, `services/timetableScanner.ts`, the AI scan entry points in `Schedule.tsx`, and the `@google/genai` dependency from `app/package.json`.
+- **Repo clutter:** Excluded prebuilt APK binaries (`studyzflow v5.1.0.apk`, etc.) from the project workspace.
+
+### Added / Redesigned
+- **Focus sessions with enforced breaks:** Added a full-screen break screen (`shortBreak` and `longBreak`, with a long break after every fourth work block) displaying a countdown, the prompt *"Stretch, drink water, leave your phone face-down."*, and a keyboard-operable *"Skip break"* action that logs skips.
+- **Phone-drift counter:** Added on-device backgrounding detection (`document.visibilitychange` on web and `@capacitor/app` `appStateChange` on Android) during active focus sessions, storing only `startedAt` and `leaveCount` on `FocusSession` and showing a neutral summary at session end.
+- **Bedtime wind-down alarm:** Added a *"Bedtime wind-down"* preset in the alarm form that configures a daily repeating alarm (`"Time to wind down. Put study and scrolling away."`) via `scheduleAlarmNotification`.
+- **Weekly reflection:** Replaced the streak/GPA area on the dashboard with a 7-day Weekly Reflection showing Planned Focus Sessions, Completed Focus Sessions, Total Focus Minutes, and Breaks Taken computed from stored `FocusSession` records.
+- **Plain attendance information:** Replaced warning-style 75% threshold alerts with plain informational text (e.g., *"Current attendance: 82%. Minimum required: 75%."*).
+- **Green and white redesign & accessibility:** Applied a calm `#FFFFFF` / `#0F1F17` and `#15803D` / `#DCFCE7` / `#86EFAC` palette across CSS variables, navigation, logo/favicon, 3D liquid timer (emerald default), and Android splash screens; respected `prefers-reduced-motion`; removed attendance confetti; and added `aria-label` attributes and visible green `:focus-visible` rings.
+- **Unit tests:** Added `app/src/services/__tests__/wellness.test.ts` covering weekly reflection calculations, break scheduling, and leave-counter gating.
+
+---
+
+## Credits
+
+Based on the original **studyzflow** project by **Dineswarkumar**: [https://github.com/Dineswarkumar/smart-study-flow-](https://github.com/Dineswarkumar/smart-study-flow-)
 
 ---
 
