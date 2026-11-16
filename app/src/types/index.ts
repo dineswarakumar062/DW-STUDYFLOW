@@ -1,7 +1,7 @@
 export type ActiveTab = 'dashboard' | 'attendance' | 'notes' | 'tasks' | 'schedule' | 'timer' | 'profile' | 'settings';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
-export type ThemePreset = 'candy' | 'glacier';
+export type ThemePreset = 'green';
 
 export interface StudentProfile {
   name: string;

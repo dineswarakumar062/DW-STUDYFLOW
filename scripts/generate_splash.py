@@ -15,9 +15,9 @@ def render_logo_icon(size=512):
     grad = Image.new('RGBA', (w, w))
     for y in range(w):
         t = y / w
-        r = int(67 + (139 - 67) * t)
-        g = int(56 + (92 - 56) * t)
-        b = int(202 + (246 - 202) * t)
+        r = int(21 + (22 - 21) * t)
+        g = int(128 + (101 - 128) * t)
+        b = int(61 + (52 - 61) * t)
         for x in range(w):
             grad.putpixel((x, y), (r, g, b, 255))
     img.paste(grad, (0, 0), mask)
@@ -83,8 +83,8 @@ for f in font_candidates:
 
 for path, w, h in targets:
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    # Background: dark obsidian slate
-    bg = Image.new('RGB', (w, h), (11, 15, 25))
+    # Background: calm white
+    bg = Image.new('RGB', (w, h), (255, 255, 255))
     
     # Calculate icon size: ~22-26% of smaller dimension, clamped between 72 and 360
     min_dim = min(w, h)
@@ -123,7 +123,7 @@ for path, w, h in targets:
     ty = icon_y + icon_size + int(icon_size * 0.16)
     
     # Draw soft subtle tagline / app name
-    draw.text((tx, ty), text, fill=(255, 255, 255), font=font)
+    draw.text((tx, ty), text, fill=(20, 32, 26), font=font)
     
     # Sub-text "Smart Academic Companion"
     sub_text = "FOCUS  •  PLAN  •  ACHIEVE"
@@ -137,7 +137,7 @@ for path, w, h in targets:
             sw = sub_font_size * 12
         sx = (w - sw) // 2
         sy = ty + th + int(icon_size * 0.08)
-        draw.text((sx, sy), sub_text, fill=(148, 163, 184), font=sub_font)
+        draw.text((sx, sy), sub_text, fill=(21, 128, 61), font=sub_font)
     
     bg.save(path, format='PNG', optimize=True)
     print(f"Generated {path} ({w}x{h})")

@@ -32,34 +32,23 @@ import {
 
 const getThemeClass = (colorTheme: TimerColorTheme) => {
   switch (colorTheme) {
-    case 'orange': return 'theme-liquid-orange';
-    case 'cyan': return 'theme-liquid-cyan';
-    case 'purple': return 'theme-liquid-purple';
-    case 'emerald': return 'theme-liquid-emerald';
-    case 'rose': return 'theme-liquid-rose';
-    default: return 'theme-liquid-orange';
+    case 'cyan': return 'theme-liquid-emerald';
+    case 'emerald':
+    default: return 'theme-liquid-emerald';
   }
 };
 
 const getThemeGradient = (colorTheme: TimerColorTheme) => {
   switch (colorTheme) {
-    case 'orange': return 'from-orange-500 to-amber-500 shadow-orange-500/30';
-    case 'cyan': return 'from-cyan-500 to-blue-500 shadow-cyan-500/30';
-    case 'purple': return 'from-purple-500 to-indigo-500 shadow-purple-500/30';
-    case 'emerald': return 'from-emerald-500 to-teal-500 shadow-emerald-500/30';
-    case 'rose': return 'from-rose-500 to-pink-500 shadow-rose-500/30';
-    default: return 'from-orange-500 to-amber-500 shadow-orange-500/30';
+    case 'emerald':
+    default: return 'from-[#15803D] to-[#166534] shadow-emerald-600/30';
   }
 };
 
 const getThemeBadgeStyle = (colorTheme: TimerColorTheme) => {
   switch (colorTheme) {
-    case 'orange': return 'bg-orange-50 dark:bg-orange-950/60 text-orange-700 dark:text-orange-300 border-orange-200/70';
-    case 'cyan': return 'bg-cyan-50 dark:bg-cyan-950/60 text-cyan-700 dark:text-cyan-300 border-cyan-200/70';
-    case 'purple': return 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200/70';
-    case 'emerald': return 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200/70';
-    case 'rose': return 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200/70';
-    default: return 'bg-orange-50 dark:bg-orange-950/60 text-orange-700 dark:text-orange-300 border-orange-200/70';
+    case 'emerald':
+    default: return 'bg-[#DCFCE7] dark:bg-emerald-950/60 text-[#15803D] dark:text-emerald-300 border-emerald-200/70';
   }
 };
 
@@ -89,7 +78,7 @@ export const TimerAndAlarm: React.FC = () => {
       name: 'Pomodoro Focus',
       durationMinutes: 25,
       type: 'focus' as const,
-      colorTheme: 'orange' as const,
+      colorTheme: 'emerald' as const,
       createdAt: new Date().toISOString(),
     };
   }, [customTimers, activeTimerId]);
@@ -112,7 +101,7 @@ export const TimerAndAlarm: React.FC = () => {
   const [formTimerName, setFormTimerName] = useState('');
   const [formTimerMins, setFormTimerMins] = useState(25);
   const [formTimerType, setFormTimerType] = useState<'focus' | 'shortBreak' | 'longBreak' | 'custom'>('focus');
-  const [formTimerTheme, setFormTimerTheme] = useState<TimerColorTheme>('orange');
+  const [formTimerTheme, setFormTimerTheme] = useState<TimerColorTheme>('emerald');
 
   // Alarm Form State
   const [alarmLabel, setAlarmLabel] = useState('');
@@ -354,7 +343,7 @@ export const TimerAndAlarm: React.FC = () => {
     setFormTimerName('');
     setFormTimerMins(25);
     setFormTimerType('focus');
-    setFormTimerTheme('orange');
+    setFormTimerTheme('emerald');
     setTimerModalOpen(true);
   };
 
@@ -461,7 +450,7 @@ export const TimerAndAlarm: React.FC = () => {
       {/* Top Toggle: Timers vs Native Alarms with Fixed Sliding Indicator */}
       <div className="relative mx-auto flex max-w-md items-center rounded-full border border-slate-200 bg-white p-1.5 shadow-md dark:border-slate-800 dark:bg-slate-900">
         <div 
-          className={`absolute top-1.5 bottom-1.5 left-1.5 w-[calc(50%-6px)] rounded-full bg-indigo-600 transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
+          className={`absolute top-1.5 bottom-1.5 left-1.5 w-[calc(50%-6px)] rounded-full bg-[#15803D] transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
             activePanel === 'timer' ? 'translate-x-0' : 'translate-x-full'
           }`} 
         />
@@ -695,9 +684,11 @@ export const TimerAndAlarm: React.FC = () => {
               {/* Main Playback Bar */}
               <div className="flex items-center gap-4">
                 <button
+                  type="button"
                   onClick={handleReset}
                   className="p-3.5 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200/80 dark:border-slate-700 transition-all shadow-xs"
                   title="Reset Timer"
+                  aria-label="Reset Timer"
                 >
                   <RotateCcw className="w-5 h-5" />
                 </button>
@@ -920,7 +911,7 @@ export const TimerAndAlarm: React.FC = () => {
         aria-label={activePanel === 'timer' ? 'Add custom timer' : 'Add alarm'}
         className="timer-fab glass-fab shadow-xl hover:scale-110 active:scale-95 transition-transform"
       >
-        <Plus className="h-7 w-7 text-indigo-600 dark:text-indigo-400" />
+        <Plus className="h-7 w-7 text-white" />
       </button>
 
       {/* =========================================================================
@@ -937,6 +928,7 @@ export const TimerAndAlarm: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setTimerModalOpen(false)}
+                aria-label="Close timer modal"
                 className="p-1 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white"
               >
                 <X className="w-5 h-5" />
@@ -990,23 +982,23 @@ export const TimerAndAlarm: React.FC = () => {
 
               {/* Liquid Color Theme */}
               <div>
-                <label className="block text-xs font-bold text-slate-500 mb-2">Liquid Glow Theme</label>
-                <div className="grid grid-cols-5 gap-2">
-                  {(['orange', 'cyan', 'purple', 'emerald', 'rose'] as TimerColorTheme[]).map((theme) => {
+                <label className="block text-xs font-bold text-slate-500 mb-2">Timer Theme</label>
+                <div className="flex gap-2">
+                  {(['emerald'] as TimerColorTheme[]).map((theme) => {
                     const isSelected = formTimerTheme === theme;
                     return (
                       <button
                         key={theme}
                         type="button"
                         onClick={() => setFormTimerTheme(theme)}
-                        className={`p-2 rounded-2xl border flex flex-col items-center gap-1.5 transition-all ${
+                        className={`px-4 py-2 rounded-2xl border flex items-center gap-2 transition-all ${
                           isSelected 
-                            ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-950/50 ring-2 ring-indigo-500/20' 
+                            ? 'border-[#15803D] bg-[#DCFCE7] dark:bg-emerald-950/50 ring-2 ring-[#15803D]/20' 
                             : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
                         }`}
                       >
-                        <div className={`w-5 h-5 rounded-full bg-gradient-to-tr ${getThemeGradient(theme)}`} />
-                        <span className="text-[10px] font-bold capitalize text-slate-600 dark:text-slate-300">{theme}</span>
+                        <div className={`w-4 h-4 rounded-full bg-gradient-to-tr ${getThemeGradient(theme)}`} />
+                        <span className="text-xs font-bold text-[#14201A] dark:text-emerald-200">Calm Green</span>
                       </button>
                     );
                   })}
@@ -1038,7 +1030,7 @@ export const TimerAndAlarm: React.FC = () => {
                   </button>
                   <button
                     type="submit"
-                    className="px-6 py-2.5 rounded-2xl bg-[#4338ca] text-white text-xs font-black shadow-md hover:bg-[#3730a3]"
+                    className="px-6 py-2.5 rounded-2xl bg-[#15803D] text-white text-xs font-black shadow-md hover:bg-[#166534]"
                   >
                     {editingTimerId ? 'Save Changes' : 'Create Timer'}
                   </button>

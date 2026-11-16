@@ -280,7 +280,7 @@ export const Attendance: React.FC = () => {
             <button
               onClick={() => changeDateByDays(-1)}
               className="p-1.5 rounded-xl hover:bg-white dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors"
-              title="Previous Day"
+              title="Previous Day" aria-label="Previous Day"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -293,7 +293,7 @@ export const Attendance: React.FC = () => {
             <button
               onClick={() => changeDateByDays(1)}
               className="p-1.5 rounded-xl hover:bg-white dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors"
-              title="Next Day"
+              title="Next Day" aria-label="Next Day"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -306,7 +306,7 @@ export const Attendance: React.FC = () => {
                 className="opacity-0 absolute inset-0 cursor-pointer w-full h-full"
                 title="Select Specific Date"
               />
-              <button className="p-1.5 rounded-xl hover:bg-white dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors">
+              <button type="button" aria-label="Calendar" className="p-1.5 rounded-xl hover:bg-white dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors">
                 <Calendar className="w-4 h-4 text-indigo-600" />
               </button>
             </div>

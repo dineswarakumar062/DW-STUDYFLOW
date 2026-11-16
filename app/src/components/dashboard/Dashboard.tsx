@@ -16,7 +16,6 @@ import {
   CalendarOff,
   ArrowRight
 } from 'lucide-react';
-import confetti from 'canvas-confetti';
 import { QuickTaskModal } from '../tasks/QuickTaskModal';
 import { calculateOverallAttendance } from '../../services/attendance';
 import { calculateWeeklyReflection } from '../../services/wellness';
@@ -80,11 +79,6 @@ export const Dashboard: React.FC = () => {
 
   const handleToggleTask = (id: string) => {
     toggleTask(id);
-    confetti({
-      particleCount: 50,
-      spread: 60,
-      origin: { y: 0.8 }
-    });
   };
 
   const handleQuickMarkAttendance = (
@@ -107,14 +101,6 @@ export const Dashboard: React.FC = () => {
       isExtraClass: false,
       scheduleId,
     });
-
-    if (newStatus === 'present') {
-      confetti({
-        particleCount: 40,
-        spread: 50,
-        origin: { y: 0.7 }
-      });
-    }
   };
 
   // Helper for lecture type styling
@@ -185,24 +171,27 @@ export const Dashboard: React.FC = () => {
         {/* Action Buttons inside Banner */}
         <div className="flex flex-wrap items-center gap-3 relative z-10">
           <button
+            type="button"
             onClick={() => setQuickTaskOpen(true)}
-            className="flex items-center gap-2 bg-white text-indigo-700 hover:bg-slate-50 active:scale-95 px-5 py-3 rounded-2xl font-black text-sm shadow-md transition-all"
+            className="flex items-center gap-2 bg-white text-[#15803D] hover:bg-[#DCFCE7] active:scale-95 px-5 py-3 rounded-2xl font-black text-sm shadow-sm transition-all"
           >
             <Plus className="w-4 h-4 stroke-[3]" />
             <span>Add Task</span>
           </button>
 
           <button
+            type="button"
             onClick={() => setActiveTab('attendance')}
-            className="flex items-center gap-2 bg-cyan-600/80 hover:bg-cyan-600 active:scale-95 text-white px-5 py-3 rounded-2xl font-bold text-sm border border-cyan-400/40 backdrop-blur-md transition-all shadow-xs"
+            className="flex items-center gap-2 bg-[#14201A]/30 hover:bg-[#14201A]/45 active:scale-95 text-white px-5 py-3 rounded-2xl font-bold text-sm border border-white/30 transition-all shadow-xs"
           >
             <CalendarCheck className="w-4 h-4" />
             <span>Attendance</span>
           </button>
 
           <button
+            type="button"
             onClick={() => setActiveTab('timer')}
-            className="flex items-center gap-2 bg-white/20 hover:bg-white/30 active:scale-95 text-white px-5 py-3 rounded-2xl font-bold text-sm border border-white/30 backdrop-blur-md transition-all shadow-xs"
+            className="flex items-center gap-2 bg-white/15 hover:bg-white/25 active:scale-95 text-white px-5 py-3 rounded-2xl font-bold text-sm border border-white/30 transition-all shadow-xs"
           >
             <Timer className="w-4 h-4" />
             <span>Focus</span>
@@ -211,60 +200,55 @@ export const Dashboard: React.FC = () => {
       </div>
 
       {/* =========================================================================
-          2. METRICS ROW: STAT CARDS (Includes Overall Attendance)
+          2. METRICS ROW: STAT CARDS (Plain cards with soft borders)
           ========================================================================= */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-5">
         
-        {/* Card 1: Today's Classes (Vibrant Indigo Aurora) */}
+        {/* Card 1: Today's Classes */}
         <div 
           onClick={() => setActiveTab('schedule')}
-          className="cursor-pointer relative overflow-hidden rounded-3xl p-4 sm:p-5 border border-indigo-200/90 dark:border-indigo-800/60 bg-gradient-to-br from-indigo-50/95 via-purple-50/50 to-white/95 dark:from-indigo-950/40 dark:via-purple-950/25 dark:to-slate-900/90 shadow-xl shadow-indigo-500/5 flex items-center gap-3.5 transition-all hover:scale-[1.02]"
+          className="cursor-pointer rounded-3xl p-4 sm:p-5 border border-emerald-200/80 dark:border-emerald-800/60 bg-white dark:bg-[#13261C] shadow-xs flex items-center gap-3.5 transition-colors hover:border-[#86EFAC]"
         >
-          <div className="absolute -top-10 -right-10 w-24 h-24 rounded-full bg-indigo-400/20 dark:bg-indigo-500/10 blur-xl pointer-events-none" />
-          <div className="w-11 h-11 rounded-2xl bg-indigo-100 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-300 flex items-center justify-center shadow-xs shrink-0 border border-indigo-200/60 relative z-10">
-            <BookOpen className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+          <div className="w-11 h-11 rounded-2xl bg-[#DCFCE7] dark:bg-emerald-950/80 text-[#15803D] dark:text-emerald-300 flex items-center justify-center shrink-0 border border-emerald-200/70">
+            <BookOpen className="w-5 h-5" />
           </div>
-          <div className="relative z-10 min-w-0">
-            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 block truncate">Today's Classes</span>
-            <span className="text-lg sm:text-xl font-black text-slate-900 dark:text-white font-headline mt-0.5 block">
+          <div className="min-w-0">
+            <span className="text-[11px] font-bold text-[#4B5B52] dark:text-emerald-200 block truncate">Today's Classes</span>
+            <span className="text-lg sm:text-xl font-black text-[#14201A] dark:text-white font-headline mt-0.5 block">
               {displayClasses.length}
             </span>
           </div>
         </div>
 
-        {/* Card 3: Overall Attendance (Vibrant Cyan/Blue Aurora) */}
+        {/* Card 2: Overall Attendance */}
         <div 
           onClick={() => setActiveTab('attendance')}
-          className="cursor-pointer relative overflow-hidden rounded-3xl p-4 sm:p-5 border border-cyan-200/90 dark:border-cyan-800/60 bg-gradient-to-br from-cyan-50/95 via-sky-50/50 to-white/95 dark:from-cyan-950/40 dark:via-sky-950/25 dark:to-slate-900/90 shadow-xl shadow-cyan-500/5 flex items-center gap-3.5 transition-all hover:scale-[1.02] group"
+          className="cursor-pointer rounded-3xl p-4 sm:p-5 border border-emerald-200/80 dark:border-emerald-800/60 bg-white dark:bg-[#13261C] shadow-xs flex items-center gap-3.5 transition-colors hover:border-[#86EFAC]"
         >
-          <div className="absolute -top-10 -right-10 w-24 h-24 rounded-full bg-cyan-400/20 dark:bg-cyan-500/10 blur-xl pointer-events-none" />
-          <div className="w-11 h-11 rounded-2xl bg-cyan-100 dark:bg-cyan-950/80 text-cyan-600 dark:text-cyan-300 flex items-center justify-center shadow-xs shrink-0 border border-cyan-200/60 relative z-10 group-hover:scale-105 transition-transform">
-            <CalendarCheck className="w-5 h-5 text-cyan-600 dark:text-cyan-400" />
+          <div className="w-11 h-11 rounded-2xl bg-[#DCFCE7] dark:bg-emerald-950/80 text-[#15803D] dark:text-emerald-300 flex items-center justify-center shrink-0 border border-emerald-200/70">
+            <CalendarCheck className="w-5 h-5" />
           </div>
-          <div className="relative z-10 min-w-0">
-            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 block truncate">Attendance</span>
+          <div className="min-w-0">
+            <span className="text-[11px] font-bold text-[#4B5B52] dark:text-emerald-200 block truncate">Attendance</span>
             <div className="flex items-baseline gap-1 mt-0.5">
-              <span className={`text-lg sm:text-xl font-black font-headline ${
-                overallAttendance.percentage >= 75 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'
-              }`}>
+              <span className="text-lg sm:text-xl font-black font-headline text-[#15803D] dark:text-emerald-300">
                 {overallAttendance.totalConducted === 0 ? '100%' : `${overallAttendance.percentage}%`}
               </span>
             </div>
           </div>
         </div>
 
-        {/* Card 4: Tasks Done (Vibrant Emerald Aurora) */}
+        {/* Card 3: Tasks Done */}
         <div 
           onClick={() => setActiveTab('notes')}
-          className="cursor-pointer relative overflow-hidden rounded-3xl p-4 sm:p-5 border border-emerald-200/90 dark:border-emerald-800/60 bg-gradient-to-br from-emerald-50/95 via-teal-50/50 to-white/95 dark:from-emerald-950/40 dark:via-teal-950/25 dark:to-slate-900/90 shadow-xl shadow-emerald-500/5 flex items-center gap-3.5 transition-all hover:scale-[1.02]"
+          className="cursor-pointer rounded-3xl p-4 sm:p-5 border border-emerald-200/80 dark:border-emerald-800/60 bg-white dark:bg-[#13261C] shadow-xs flex items-center gap-3.5 transition-colors hover:border-[#86EFAC]"
         >
-          <div className="absolute -top-10 -right-10 w-24 h-24 rounded-full bg-emerald-400/20 dark:bg-emerald-500/10 blur-xl pointer-events-none" />
-          <div className="w-11 h-11 rounded-2xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-300 flex items-center justify-center shadow-xs shrink-0 border border-emerald-200/60 relative z-10">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+          <div className="w-11 h-11 rounded-2xl bg-[#DCFCE7] dark:bg-emerald-950/80 text-[#15803D] dark:text-emerald-300 flex items-center justify-center shrink-0 border border-emerald-200/70">
+            <CheckCircle2 className="w-5 h-5" />
           </div>
-          <div className="relative z-10 min-w-0">
-            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 block truncate">Tasks Done</span>
-            <span className="text-lg sm:text-xl font-black text-slate-900 dark:text-white font-headline mt-0.5 block">
+          <div className="min-w-0">
+            <span className="text-[11px] font-bold text-[#4B5B52] dark:text-emerald-200 block truncate">Tasks Done</span>
+            <span className="text-lg sm:text-xl font-black text-[#14201A] dark:text-white font-headline mt-0.5 block">
               {completionRate}%
             </span>
           </div>

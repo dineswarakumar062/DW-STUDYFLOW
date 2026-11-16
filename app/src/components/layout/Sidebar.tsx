@@ -50,7 +50,7 @@ export const Sidebar: React.FC = () => {
 
       {/* Sidebar Container */}
       <aside className={`
-        fixed left-0 top-0 h-full w-72 bg-white dark:bg-slate-900 border-r border-slate-200/80 dark:border-slate-800 pt-6 pb-24 lg:py-6 px-4 z-50 flex flex-col justify-between transition-transform duration-300 shadow-xs
+        fixed left-0 top-0 h-full w-72 bg-white dark:bg-[#0F1F17] border-r border-emerald-100 dark:border-emerald-900/60 pt-6 pb-24 lg:py-6 px-4 z-50 flex flex-col justify-between transition-transform duration-300 shadow-xs
         ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         <div>
@@ -66,20 +66,20 @@ export const Sidebar: React.FC = () => {
               <img
                 src="/logo.svg"
                 alt="studyzflow logo"
-                className="w-10 h-10 rounded-2xl shadow-md shadow-indigo-500/25 group-hover:scale-105 transition-transform"
+                className="w-10 h-10 rounded-2xl shadow-sm group-hover:scale-105 transition-transform"
               />
               <div>
                 <h1 className="text-xl font-black tracking-tight font-headline flex items-center gap-1">
-                  <span className="text-slate-900 dark:text-white">studyz</span>
-                  <span className="text-indigo-600 dark:text-indigo-400">flow</span>
+                  <span className="text-[#14201A] dark:text-white">studyz</span>
+                  <span className="text-[#15803D] dark:text-[#86EFAC]">flow</span>
                 </h1>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-bold tracking-wide">Academic Planner</p>
+                <p className="text-[11px] text-[#4B5B52] dark:text-emerald-200/80 font-bold tracking-wide">Digital Wellness</p>
               </div>
             </div>
 
             <button 
               onClick={() => setMobileMenuOpen(false)}
-              className="lg:hidden p-2 text-slate-500 hover:text-indigo-600 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              className="lg:hidden p-2 text-[#4B5B52] hover:text-[#15803D] rounded-xl hover:bg-[#DCFCE7] dark:hover:bg-emerald-950 transition-colors"
               aria-label="Close sidebar"
             >
               <X className="w-5 h-5" />
@@ -102,13 +102,13 @@ export const Sidebar: React.FC = () => {
                   className={`
                     w-full flex items-center justify-between px-4 py-3 rounded-2xl font-bold text-sm transition-all duration-200
                     ${isActive 
-                      ? 'bg-[#4338ca] text-white shadow-md shadow-indigo-600/20' 
-                      : 'text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50/70 dark:hover:bg-slate-800'
+                      ? 'bg-[#15803D] text-white shadow-sm' 
+                      : 'text-[#4B5B52] dark:text-emerald-100/80 hover:text-[#15803D] dark:hover:text-[#86EFAC] hover:bg-[#DCFCE7]/70 dark:hover:bg-emerald-950/60'
                     }
                   `}
                 >
                   <div className="flex items-center gap-3">
-                    <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
+                    <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-[#4B5B52] dark:text-emerald-200/70'}`} />
                     <span>{item.label}</span>
                   </div>
 
@@ -116,7 +116,7 @@ export const Sidebar: React.FC = () => {
                     <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
                       isActive 
                         ? 'bg-white/25 text-white' 
-                        : 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-900/50'
+                        : 'bg-[#DCFCE7] dark:bg-emerald-950/60 text-[#15803D] dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/50'
                     }`}>
                       {item.count}
                     </span>

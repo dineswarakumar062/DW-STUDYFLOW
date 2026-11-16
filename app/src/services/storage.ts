@@ -75,7 +75,7 @@ export const defaultProfile: StudentProfile = {
 
 export const defaultSettings: AppSettings = {
   themeMode: 'light',
-  themePreset: 'candy',
+  themePreset: 'green',
   soundEnabled: true,
   notificationsEnabled: false,
   alarmVolume: 80,
@@ -97,7 +97,7 @@ export const defaultCustomTimers: CustomTimerItem[] = [
     name: 'Pomodoro Focus',
     durationMinutes: 25,
     type: 'focus',
-    colorTheme: 'orange',
+    colorTheme: 'emerald',
     createdAt: new Date().toISOString(),
   },
   {
@@ -105,7 +105,7 @@ export const defaultCustomTimers: CustomTimerItem[] = [
     name: 'Deep Study Sprint',
     durationMinutes: 45,
     type: 'focus',
-    colorTheme: 'purple',
+    colorTheme: 'emerald',
     createdAt: new Date().toISOString(),
   },
   {
@@ -113,7 +113,7 @@ export const defaultCustomTimers: CustomTimerItem[] = [
     name: 'Quick Revision',
     durationMinutes: 15,
     type: 'focus',
-    colorTheme: 'cyan',
+    colorTheme: 'emerald',
     createdAt: new Date().toISOString(),
   },
   {
@@ -129,7 +129,7 @@ export const defaultCustomTimers: CustomTimerItem[] = [
     name: 'Short Break',
     durationMinutes: 5,
     type: 'shortBreak',
-    colorTheme: 'cyan',
+    colorTheme: 'emerald',
     createdAt: new Date().toISOString(),
   },
   {
@@ -137,7 +137,7 @@ export const defaultCustomTimers: CustomTimerItem[] = [
     name: 'Long Recharge',
     durationMinutes: 15,
     type: 'longBreak',
-    colorTheme: 'rose',
+    colorTheme: 'emerald',
     createdAt: new Date().toISOString(),
   },
 ];
@@ -166,7 +166,7 @@ function readStored<T>(key: string, fallback: T, validate: (value: unknown) => b
 function sanitizeSettingsObject(raw: Record<string, unknown>): AppSettings {
   const current = storage.getSettings();
   const validModes: ThemeMode[] = ['light', 'dark', 'system'];
-  const validPresets: ThemePreset[] = ['candy', 'glacier'];
+  const validPresets: ThemePreset[] = ['green'];
   return {
     ...defaultSettings,
     themeMode: validModes.includes(raw.themeMode as ThemeMode) ? (raw.themeMode as ThemeMode) : current.themeMode,

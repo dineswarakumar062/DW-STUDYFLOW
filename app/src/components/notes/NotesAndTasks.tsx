@@ -924,8 +924,9 @@ export const NotesAndTasks: React.FC = () => {
                 <button
                   type="button"
                   onClick={handleCopyNote}
-                  className="glass-icon-button p-2 text-slate-500 hover:text-indigo-600 dark:text-slate-400"
+                  className="glass-icon-button p-2 text-slate-500 hover:text-[#15803D] dark:text-slate-400"
                   title="Copy Note Text"
+                  aria-label="Copy Note Text"
                 >
                   {copiedToast ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
                 </button>
@@ -949,6 +950,7 @@ export const NotesAndTasks: React.FC = () => {
                   onClick={handleDeleteNoteFromModal}
                   className="glass-icon-button p-2 text-slate-400 hover:text-rose-500"
                   title="Delete Note"
+                  aria-label="Delete Note"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
