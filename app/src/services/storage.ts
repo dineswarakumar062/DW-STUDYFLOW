@@ -1,5 +1,5 @@
 import DOMPurify from 'dompurify';
-import type { StudentProfile, TaskItem, NoteItem, ClassSchedule, FocusSession, AppSettings, AlarmItem, CustomTimerItem, AttendanceRecord, SubjectAttendanceGoal, ThemeMode, ThemePreset } from '../types';
+import type { StudentProfile, TaskItem, NoteItem, ClassSchedule, FocusSession, BedtimeLog, AppSettings, AlarmItem, CustomTimerItem, ThemeMode, ThemePreset } from '../types';
 
 export function getLocalDateStr(date: Date = new Date()): string {
   const year = date.getFullYear();
@@ -54,15 +54,13 @@ const STORAGE_KEYS = {
   SETTINGS: 'studyflow_settings',
   ALARMS: 'studyflow_alarms',
   CUSTOM_TIMERS: 'studyflow_custom_timers',
-  ATTENDANCE: 'studyflow_attendance',
-  ATTENDANCE_GOALS: 'studyflow_attendance_goals',
+  BEDTIME_LOGS: 'studyflow_bedtime_logs',
 };
 const PENDING_CLOUD_SYNC_KEY = 'studyflow_pending_cloud_sync';
 
 export const ENABLE_DEV_SAMPLE_DATA = false;
 
-export const defaultAttendance: AttendanceRecord[] = [];
-export const defaultAttendanceGoals: SubjectAttendanceGoal[] = [];
+export const defaultBedtimeLogs: BedtimeLog[] = [];
 
 const localChangeListeners = new Set<() => void>();
 
@@ -260,18 +258,11 @@ export const storage = {
     localStorage.setItem(STORAGE_KEYS.CUSTOM_TIMERS, JSON.stringify(timers));
     notifySync(opts);
   },
-  getAttendance: (): AttendanceRecord[] => {
-    return readStored(STORAGE_KEYS.ATTENDANCE, defaultAttendance, isObjectArray) as AttendanceRecord[];
+  getBedtimeLogs: (): BedtimeLog[] => {
+    return readStored(STORAGE_KEYS.BEDTIME_LOGS, defaultBedtimeLogs, isObjectArray) as BedtimeLog[];
   },
-  saveAttendance: (attendance: AttendanceRecord[], opts?: { skipCloud?: boolean }) => {
-    localStorage.setItem(STORAGE_KEYS.ATTENDANCE, JSON.stringify(attendance));
-    notifySync(opts);
-  },
-  getAttendanceGoals: (): SubjectAttendanceGoal[] => {
-    return readStored(STORAGE_KEYS.ATTENDANCE_GOALS, defaultAttendanceGoals, isObjectArray) as SubjectAttendanceGoal[];
-  },
-  saveAttendanceGoals: (goals: SubjectAttendanceGoal[], opts?: { skipCloud?: boolean }) => {
-    localStorage.setItem(STORAGE_KEYS.ATTENDANCE_GOALS, JSON.stringify(goals));
+  saveBedtimeLogs: (logs: BedtimeLog[], opts?: { skipCloud?: boolean }) => {
+    localStorage.setItem(STORAGE_KEYS.BEDTIME_LOGS, JSON.stringify(logs));
     notifySync(opts);
   },
   getAllData: () => ({
@@ -283,8 +274,7 @@ export const storage = {
     settings: storage.getSettings(),
     alarms: storage.getAlarms(),
     customTimers: storage.getCustomTimers(),
-    attendance: storage.getAttendance(),
-    attendanceGoals: storage.getAttendanceGoals(),
+    bedtimeLogs: storage.getBedtimeLogs(),
   }),
   hasPendingCloudSync: () => localStorage.getItem(PENDING_CLOUD_SYNC_KEY) === '1',
   clearPendingCloudSync: () => localStorage.removeItem(PENDING_CLOUD_SYNC_KEY),
@@ -426,44 +416,17 @@ export const storage = {
       });
       storage.saveCustomTimers(Array.from(timerMap.values()), opts);
 
-      // 7. Merge Attendance Records (Deduplicate by ID, keep newer createdAt)
-      const localAttendance = storage.getAttendance();
-      const remoteAttendance = (remote.attendance && isObjectArray(remote.attendance) ? remote.attendance : []) as unknown as AttendanceRecord[];
-      const attMap = new Map<string, AttendanceRecord>();
-      localAttendance.forEach(a => attMap.set(a.id, a));
-      remoteAttendance.forEach(ra => {
-        if (!ra.id) return;
-        const sanitizedRa: AttendanceRecord = {
-          ...ra,
-          subjectName: sanitizeText(ra.subjectName),
-          location: ra.location ? sanitizeText(ra.location) : undefined,
-          notes: ra.notes ? sanitizeText(ra.notes) : undefined,
-        };
-        if (!attMap.has(ra.id)) {
-          attMap.set(ra.id, sanitizedRa);
-        } else {
-          const local = attMap.get(ra.id)!;
-          if (new Date(sanitizedRa.createdAt || 0).getTime() >= new Date(local.createdAt || 0).getTime()) {
-            attMap.set(ra.id, sanitizedRa);
-          }
+      // 7. Merge Bedtime Logs (Deduplicate by date)
+      const localBedtimeLogs = storage.getBedtimeLogs();
+      const remoteBedtimeLogs = (remote.bedtimeLogs && isObjectArray(remote.bedtimeLogs) ? remote.bedtimeLogs : []) as unknown as BedtimeLog[];
+      const bedtimeMap = new Map<string, BedtimeLog>();
+      localBedtimeLogs.forEach(b => bedtimeMap.set(b.date, b));
+      remoteBedtimeLogs.forEach(rb => {
+        if (rb.date && !bedtimeMap.has(rb.date)) {
+          bedtimeMap.set(rb.date, rb);
         }
       });
-      storage.saveAttendance(Array.from(attMap.values()), opts);
-
-      // 8. Merge Attendance Goals (Deduplicate by subjectName, update with remote)
-      const localGoals = storage.getAttendanceGoals();
-      const remoteGoals = (remote.attendanceGoals && isObjectArray(remote.attendanceGoals) ? remote.attendanceGoals : []) as unknown as SubjectAttendanceGoal[];
-      const goalMap = new Map<string, SubjectAttendanceGoal>();
-      localGoals.forEach(g => goalMap.set(g.subjectName.toLowerCase(), g));
-      remoteGoals.forEach(rg => {
-        if (rg.subjectName) {
-          const cleanName = sanitizeText(rg.subjectName);
-          if (cleanName) {
-            goalMap.set(cleanName.toLowerCase(), { ...rg, subjectName: cleanName });
-          }
-        }
-      });
-      storage.saveAttendanceGoals(Array.from(goalMap.values()), opts);
+      storage.saveBedtimeLogs(Array.from(bedtimeMap.values()), opts);
 
       notifySync(opts);
       return true;
@@ -485,8 +448,7 @@ export const storage = {
         (parsed.settings !== undefined && !isRecord(parsed.settings)) ||
         (parsed.alarms !== undefined && !isObjectArray(parsed.alarms)) ||
         (parsed.customTimers !== undefined && !isObjectArray(parsed.customTimers)) ||
-        (parsed.attendance !== undefined && !isObjectArray(parsed.attendance)) ||
-        (parsed.attendanceGoals !== undefined && !isObjectArray(parsed.attendanceGoals));
+        (parsed.bedtimeLogs !== undefined && !isObjectArray(parsed.bedtimeLogs));
 
       if (hasInvalidSection) return false;
 
@@ -547,6 +509,9 @@ export const storage = {
           durationMinutes: Math.max(0, Number(s.durationMinutes) || 0),
           leaveCount: typeof s.leaveCount === 'number' ? Math.max(0, s.leaveCount) : undefined,
           breakSkipped: typeof s.breakSkipped === 'boolean' ? s.breakSkipped : undefined,
+          endedEarly: typeof s.endedEarly === 'boolean' ? s.endedEarly : undefined,
+          reflection: s.reflection === 'calm' || s.reflection === 'neutral' || s.reflection === 'distracted' ? s.reflection : undefined,
+          intention: s.intention ? sanitizeText(s.intention) : undefined,
         }));
         storage.saveSessions(sanitizedSessions, opts);
       }
@@ -573,22 +538,13 @@ export const storage = {
         storage.saveCustomTimers(sanitizedTimers, opts);
       }
 
-      if (parsed.attendance && Array.isArray(parsed.attendance)) {
-        const sanitizedAttendance: AttendanceRecord[] = (parsed.attendance as AttendanceRecord[]).map((a) => ({
-          ...a,
-          subjectName: sanitizeText(a.subjectName),
-          location: a.location ? sanitizeText(a.location) : undefined,
-          notes: a.notes ? sanitizeText(a.notes) : undefined,
+      if (parsed.bedtimeLogs && Array.isArray(parsed.bedtimeLogs)) {
+        const sanitizedBedtime: BedtimeLog[] = (parsed.bedtimeLogs as BedtimeLog[]).map((b) => ({
+          ...b,
+          status: b.status === 'on-time' ? 'on-time' : 'late',
+          targetTime: sanitizeText(b.targetTime) || '22:00',
         }));
-        storage.saveAttendance(sanitizedAttendance, opts);
-      }
-
-      if (parsed.attendanceGoals && Array.isArray(parsed.attendanceGoals)) {
-        const sanitizedGoals: SubjectAttendanceGoal[] = (parsed.attendanceGoals as SubjectAttendanceGoal[]).map((g) => ({
-          ...g,
-          subjectName: sanitizeText(g.subjectName),
-        }));
-        storage.saveAttendanceGoals(sanitizedGoals, opts);
+        storage.saveBedtimeLogs(sanitizedBedtime, opts);
       }
       notifySync(opts);
       return true;
@@ -603,8 +559,7 @@ export const storage = {
     storage.saveSchedule([], { skipCloud: true });
     storage.saveSessions([], { skipCloud: true });
     storage.saveAlarms([], { skipCloud: true });
-    storage.saveAttendance([], { skipCloud: true });
-    storage.saveAttendanceGoals([], { skipCloud: true });
+    storage.saveBedtimeLogs([], { skipCloud: true });
     storage.saveCustomTimers(defaultCustomTimers, { skipCloud: true });
     localStorage.removeItem(PENDING_CLOUD_SYNC_KEY);
     localStorage.removeItem('study_flow_last_cloud_upload');
@@ -626,8 +581,7 @@ try {
     localStorage.removeItem(STORAGE_KEYS.NOTES);
     localStorage.removeItem(STORAGE_KEYS.SCHEDULE);
     localStorage.removeItem(STORAGE_KEYS.SESSIONS);
-    localStorage.removeItem(STORAGE_KEYS.ATTENDANCE);
-    localStorage.removeItem(STORAGE_KEYS.ATTENDANCE_GOALS);
+    localStorage.removeItem(STORAGE_KEYS.BEDTIME_LOGS);
     localStorage.removeItem(STORAGE_KEYS.ALARMS);
   }
 } catch {

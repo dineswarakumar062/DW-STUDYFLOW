@@ -1,7 +1,7 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
 import type { ActiveTab } from '../../types';
-import { LayoutDashboard, CheckSquare, Timer, CalendarCheck } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, Timer, Activity } from 'lucide-react';
 
 interface NavItem {
   id: ActiveTab;
@@ -15,7 +15,7 @@ export const MobileNav: React.FC = () => {
 
   const navItems: NavItem[] = [
     { id: 'dashboard', label: 'Home', icon: LayoutDashboard, matchTabs: ['dashboard'] },
-    { id: 'attendance', label: 'Classes', icon: CalendarCheck, matchTabs: ['attendance', 'schedule'] },
+    { id: 'activity', label: 'Activity', icon: Activity, matchTabs: ['activity'] },
     { id: 'notes', label: 'Tasks', icon: CheckSquare, matchTabs: ['notes', 'tasks'] },
     { id: 'timer', label: 'Focus', icon: Timer, matchTabs: ['timer'] },
   ];

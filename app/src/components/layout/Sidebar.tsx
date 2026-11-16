@@ -10,7 +10,7 @@ import {
   Settings as SettingsIcon, 
   X,
   Edit2,
-  CalendarCheck
+  Activity
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
@@ -27,7 +27,7 @@ export const Sidebar: React.FC = () => {
 
   const navItems: { id: ActiveTab; label: string; icon: React.FC<{ className?: string }>; count?: number }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'attendance', label: 'Attendance Hub', icon: CalendarCheck },
+    { id: 'activity', label: 'Activity', icon: Activity },
     { id: 'schedule', label: 'Weekly Timetable', icon: Calendar },
     { id: 'notes', label: 'Tasks & Notes', icon: CheckSquare, count: pendingCount },
     { id: 'timer', label: 'Focus Timer', icon: Timer },

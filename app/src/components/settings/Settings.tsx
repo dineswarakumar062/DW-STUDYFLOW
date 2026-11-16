@@ -572,7 +572,7 @@ export const Settings: React.FC = () => {
         <div className="pt-2 border-t border-amber-200/50 dark:border-amber-900/40 relative z-10 flex flex-col sm:flex-row items-center justify-between gap-3">
           <div>
             <h4 className="text-xs font-black text-rose-600 dark:text-rose-400">Clear All App Data</h4>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Permanently reset all tasks, notes, attendance and timetable to a fresh start.</p>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Permanently reset all tasks, notes, focus logs, and timetable to a fresh start.</p>
           </div>
           <button
             type="button"
@@ -642,7 +642,7 @@ export const Settings: React.FC = () => {
                   Reset All Application Data?
                 </h3>
                 <p className="text-xs text-slate-600 dark:text-slate-300 font-medium mt-1 leading-relaxed">
-                  This will permanently wipe all classes, timetable schedules, attendance records, tasks, study notes, and focus history. If cloud sync is connected, your cloud backup will also be reset to clean.
+                  This will permanently wipe all classes, timetable schedules, tasks, study notes, bedtime logs, and focus history. If cloud sync is connected, your cloud backup will also be reset to clean.
                 </p>
               </div>
             </div>
@@ -686,7 +686,7 @@ export const Settings: React.FC = () => {
                   Download Cloud Backup?
                 </h3>
                 <p className="text-xs text-slate-600 dark:text-slate-300 font-medium mt-1 leading-relaxed">
-                  This will download the latest cloud snapshot and update your local notes, tasks, attendance records, and classes with the cloud version.
+                  This will download the latest cloud snapshot and update your local notes, tasks, focus logs, and classes with the cloud version.
                 </p>
               </div>
             </div>

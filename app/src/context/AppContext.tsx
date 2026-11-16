@@ -6,15 +6,15 @@ import type {
   NoteItem, 
   ClassSchedule, 
   FocusSession, 
+  BedtimeLog,
+  SessionReflection,
   AlarmItem,
   CustomTimerItem,
   AppSettings,
   ThemeMode,
-  ThemePreset,
-  AttendanceRecord,
-  SubjectAttendanceGoal
+  ThemePreset
 } from '../types';
-import { storage, subscribeToSync, defaultProfile, defaultCustomTimers } from '../services/storage';
+import { storage, subscribeToSync, defaultProfile, defaultCustomTimers, getLocalDateStr } from '../services/storage';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { cancelAlarmNotification, scheduleAlarmNotification, playRichAlarmChime, isNativeNotificationSupported } from '../services/notifications';
 import {
@@ -42,8 +42,7 @@ export interface AppState {
   alarms: AlarmItem[];
   customTimers: CustomTimerItem[];
   settings: AppSettings;
-  attendance: AttendanceRecord[];
-  attendanceGoals: SubjectAttendanceGoal[];
+  bedtimeLogs: BedtimeLog[];
   ringingAlarm: { id: string; label: string } | null;
   lastSyncTime: string;
   syncStatus: 'synced' | 'syncing' | 'offline';
@@ -84,12 +83,8 @@ export type AppAction =
   | { type: 'SET_CUSTOM_TIMERS'; payload: CustomTimerItem[] }
   | { type: 'SET_SETTINGS'; payload: AppSettings }
   | { type: 'UPDATE_SETTINGS'; payload: Partial<AppSettings> }
-  | { type: 'SET_ATTENDANCE'; payload: AttendanceRecord[] }
-  | { type: 'SET_ATTENDANCE_GOALS'; payload: SubjectAttendanceGoal[] }
-  | { type: 'MARK_ATTENDANCE'; payload: AttendanceRecord }
-  | { type: 'UPDATE_ATTENDANCE_RECORD'; payload: { id: string; updated: Partial<AttendanceRecord> } }
-  | { type: 'DELETE_ATTENDANCE_RECORD'; payload: string }
-  | { type: 'SAVE_ATTENDANCE_GOAL'; payload: SubjectAttendanceGoal }
+  | { type: 'UPDATE_SESSION_REFLECTION'; payload: { id: string; reflection: SessionReflection } }
+  | { type: 'SET_BEDTIME_LOGS'; payload: BedtimeLog[] }
   | { type: 'SET_RINGING_ALARM'; payload: { id: string; label: string } | null }
   | { type: 'SET_SYNC_STATUS'; payload: 'synced' | 'syncing' | 'offline' }
   | { type: 'SET_LAST_SYNC_TIME'; payload: string }
@@ -258,55 +253,16 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, settings: nextSettings };
     }
 
-    case 'SET_ATTENDANCE':
-      return { ...state, attendance: action.payload };
-
-    case 'SET_ATTENDANCE_GOALS':
-      return { ...state, attendanceGoals: action.payload };
-
-    case 'MARK_ATTENDANCE': {
-      const record = action.payload;
-      const existingIndex = state.attendance.findIndex((a) =>
-        a.date === record.date &&
-        (record.scheduleId
-          ? a.scheduleId === record.scheduleId
-          : !record.isExtraClass && a.subjectName === record.subjectName && a.time === record.time)
-      );
-
-      if (existingIndex >= 0 && !record.isExtraClass) {
-        const updated = [...state.attendance];
-        updated[existingIndex] = { ...updated[existingIndex], ...record };
-        return { ...state, attendance: updated };
-      }
-      return { ...state, attendance: [record, ...state.attendance] };
-    }
-
-    case 'UPDATE_ATTENDANCE_RECORD':
+    case 'UPDATE_SESSION_REFLECTION':
       return {
         ...state,
-        attendance: state.attendance.map((a) =>
-          a.id === action.payload.id ? { ...a, ...action.payload.updated } : a
+        sessions: state.sessions.map((s) =>
+          s.id === action.payload.id ? { ...s, reflection: action.payload.reflection } : s
         ),
       };
 
-    case 'DELETE_ATTENDANCE_RECORD':
-      return {
-        ...state,
-        attendance: state.attendance.filter((a) => a.id !== action.payload),
-      };
-
-    case 'SAVE_ATTENDANCE_GOAL': {
-      const goal = action.payload;
-      const existingIndex = state.attendanceGoals.findIndex(
-        (g) => g.subjectName.toLowerCase() === goal.subjectName.toLowerCase()
-      );
-      if (existingIndex >= 0) {
-        const updated = [...state.attendanceGoals];
-        updated[existingIndex] = goal;
-        return { ...state, attendanceGoals: updated };
-      }
-      return { ...state, attendanceGoals: [...state.attendanceGoals, goal] };
-    }
+    case 'SET_BEDTIME_LOGS':
+      return { ...state, bedtimeLogs: action.payload };
 
     case 'SET_RINGING_ALARM':
       return { ...state, ringingAlarm: action.payload };
@@ -347,8 +303,7 @@ function initializeAppState(): AppState {
     alarms: storage.getAlarms(),
     customTimers: storage.getCustomTimers(),
     settings: storage.getSettings(),
-    attendance: storage.getAttendance(),
-    attendanceGoals: storage.getAttendanceGoals(),
+    bedtimeLogs: storage.getBedtimeLogs(),
     ringingAlarm: null,
     lastSyncTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     syncStatus: 'synced',
@@ -382,7 +337,8 @@ interface AppContextType {
   updateClass: (id: string, updated: Partial<ClassSchedule>) => void;
   deleteClass: (id: string) => void;
   sessions: FocusSession[];
-  logSession: (session: Omit<FocusSession, 'id' | 'completedAt'>) => void;
+  logSession: (session: Omit<FocusSession, 'id' | 'completedAt'>) => string;
+  updateSessionReflection: (id: string, reflection: SessionReflection) => void;
   alarms: AlarmItem[];
   addAlarm: (alarm: Omit<AlarmItem, 'id' | 'createdAt'>) => void;
   updateAlarm: (id: string, updated: Partial<AlarmItem>) => void;
@@ -390,12 +346,8 @@ interface AppContextType {
   toggleAlarm: (id: string) => void;
   customTimers: CustomTimerItem[];
   saveCustomTimers: (timers: CustomTimerItem[]) => void;
-  attendance: AttendanceRecord[];
-  attendanceGoals: SubjectAttendanceGoal[];
-  markAttendance: (record: Omit<AttendanceRecord, 'id' | 'createdAt'>) => void;
-  updateAttendanceRecord: (id: string, updated: Partial<AttendanceRecord>) => void;
-  deleteAttendanceRecord: (id: string) => void;
-  saveAttendanceGoal: (goal: SubjectAttendanceGoal) => void;
+  bedtimeLogs: BedtimeLog[];
+  logBedtime: (status: 'on-time' | 'late', targetTime?: string) => void;
   ringingAlarm: { id: string; label: string } | null;
   dismissRingingAlarm: () => void;
   settings: AppSettings;
@@ -466,8 +418,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         alarms: loadedAlarms,
         customTimers: storage.getCustomTimers(),
         settings: storage.getSettings(),
-        attendance: storage.getAttendance(),
-        attendanceGoals: storage.getAttendanceGoals(),
+        bedtimeLogs: storage.getBedtimeLogs(),
         lastCloudUpload: storage.getLastCloudUpload(),
         lastCloudDownload: storage.getLastCloudDownload(),
         lastSyncTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -696,14 +647,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     storage.saveSchedule(updatedSchedule);
   };
 
-  const logSession = (session: Omit<FocusSession, 'id' | 'completedAt'>) => {
+  const logSession = (session: Omit<FocusSession, 'id' | 'completedAt'>): string => {
+    const id = 'session_' + Date.now();
     const newSession: FocusSession = {
       ...session,
-      id: 'session_' + Date.now(),
+      id,
       completedAt: new Date().toISOString(),
     };
     const updated = [newSession, ...state.sessions];
     dispatch({ type: 'LOG_SESSION', payload: newSession });
+    storage.saveSessions(updated);
+    return id;
+  };
+
+  const updateSessionReflection = (id: string, reflection: SessionReflection) => {
+    const updated = state.sessions.map((s) => (s.id === id ? { ...s, reflection } : s));
+    dispatch({ type: 'UPDATE_SESSION_REFLECTION', payload: { id, reflection } });
     storage.saveSessions(updated);
   };
 
@@ -743,63 +702,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     storage.saveCustomTimers(timers);
   };
 
-  const markAttendance = (record: Omit<AttendanceRecord, 'id' | 'createdAt'>) => {
-    const existingIndex = state.attendance.findIndex((a) => 
-      a.date === record.date && 
-      (record.scheduleId ? a.scheduleId === record.scheduleId : (!record.isExtraClass && a.subjectName === record.subjectName && a.time === record.time))
-    );
-
-    const nowIso = new Date().toISOString();
-    let updatedRecord: AttendanceRecord;
-    if (existingIndex >= 0 && !record.isExtraClass) {
-      updatedRecord = {
-        ...state.attendance[existingIndex],
-        ...record,
-      };
-    } else {
-      updatedRecord = {
-        ...record,
-        id: `att_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
-        createdAt: nowIso,
-      };
-    }
-    dispatch({ type: 'MARK_ATTENDANCE', payload: updatedRecord });
-    
-    // Save to storage
-    const currentList = [...state.attendance];
-    if (existingIndex >= 0 && !record.isExtraClass) {
-      currentList[existingIndex] = updatedRecord;
-      storage.saveAttendance(currentList);
-    } else {
-      storage.saveAttendance([updatedRecord, ...currentList]);
-    }
-  };
-
-  const updateAttendanceRecord = (id: string, updatedFields: Partial<AttendanceRecord>) => {
-    const updated = state.attendance.map((a) => (a.id === id ? { ...a, ...updatedFields } : a));
-    dispatch({ type: 'UPDATE_ATTENDANCE_RECORD', payload: { id, updated: updatedFields } });
-    storage.saveAttendance(updated);
-  };
-
-  const deleteAttendanceRecord = (id: string) => {
-    const updated = state.attendance.filter((a) => a.id !== id);
-    dispatch({ type: 'DELETE_ATTENDANCE_RECORD', payload: id });
-    storage.saveAttendance(updated);
-  };
-
-  const saveAttendanceGoal = (goal: SubjectAttendanceGoal) => {
-    const existingIndex = state.attendanceGoals.findIndex(
-      (g) => g.subjectName.toLowerCase() === goal.subjectName.toLowerCase()
-    );
-    let updated: SubjectAttendanceGoal[];
-    if (existingIndex >= 0) {
-      updated = [...state.attendanceGoals];
-      updated[existingIndex] = goal;
-    } else {
-      updated = [...state.attendanceGoals, goal];
-    }
-    dispatch({ type: 'SAVE_ATTENDANCE_GOAL', payload: goal });
-    storage.saveAttendanceGoals(updated);
+  const logBedtime = (status: 'on-time' | 'late', targetTime = '22:00') => {
+    const today = getLocalDateStr();
+    const newEntry: BedtimeLog = {
+      id: `bed_${today}`,
+      date: today,
+      status,
+      targetTime,
+      loggedAt: new Date().toISOString(),
+    };
+    const filtered = state.bedtimeLogs.filter((b) => b.date !== today);
+    const updated = [newEntry, ...filtered];
+    dispatch({ type: 'SET_BEDTIME_LOGS', payload: updated });
+    storage.saveBedtimeLogs(updated);
   };
 
   const dismissRingingAlarm = () => {
@@ -946,8 +861,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         tasks: [],
         notes: [],
         schedule: [],
-        attendance: [],
-        attendanceGoals: [],
+        bedtimeLogs: [],
         sessions: [],
         alarms: [],
         customTimers: defaultCustomTimers,
@@ -995,6 +909,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       deleteClass,
       sessions: state.sessions,
       logSession,
+      updateSessionReflection,
       alarms: state.alarms,
       addAlarm,
       updateAlarm,
@@ -1002,12 +917,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       toggleAlarm,
       customTimers: state.customTimers,
       saveCustomTimers,
-      attendance: state.attendance,
-      attendanceGoals: state.attendanceGoals,
-      markAttendance,
-      updateAttendanceRecord,
-      deleteAttendanceRecord,
-      saveAttendanceGoal,
+      bedtimeLogs: state.bedtimeLogs,
+      logBedtime,
       ringingAlarm: state.ringingAlarm,
       dismissRingingAlarm,
       settings: state.settings,

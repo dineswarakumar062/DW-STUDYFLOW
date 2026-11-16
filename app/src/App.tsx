@@ -11,11 +11,9 @@ const named = <T extends string>(loader: () => Promise<Record<T, React.Component
   lazy(() => loader().then(m => ({ default: m[name] })));
 
 const Dashboard = named(() => import('./components/dashboard/Dashboard'), 'Dashboard');
+const Activity = named(() => import('./components/activity/Activity'), 'Activity');
 const NotesAndTasks = named(() => import('./components/notes/NotesAndTasks'), 'NotesAndTasks');
-const AcademicScheduleAndAttendance = named(
-  () => import('./components/academics/AcademicScheduleAndAttendance'),
-  'AcademicScheduleAndAttendance'
-);
+const Schedule = named(() => import('./components/schedule/Schedule'), 'Schedule');
 const TimerAndAlarm = named(() => import('./components/timer/TimerAndAlarm'), 'TimerAndAlarm');
 const Profile = named(() => import('./components/profile/Profile'), 'Profile');
 const Settings = named(() => import('./components/settings/Settings'), 'Settings');
@@ -72,7 +70,7 @@ const MainContent: React.FC = () => {
     // Browser popstate back button support
     const handlePopState = (event: PopStateEvent) => {
       const targetTab = event.state?.tab;
-      if (targetTab && ['dashboard', 'attendance', 'notes', 'tasks', 'schedule', 'timer', 'profile', 'settings'].includes(targetTab)) {
+      if (targetTab && ['dashboard', 'activity', 'notes', 'tasks', 'schedule', 'timer', 'profile', 'settings'].includes(targetTab)) {
         setActiveTab(targetTab);
       } else if (activeTabRef.current !== 'dashboard') {
         setActiveTab('dashboard');
@@ -99,9 +97,10 @@ const MainContent: React.FC = () => {
     switch (activeTab) {
       case 'dashboard':
         return <Dashboard />;
-      case 'attendance':
+      case 'activity':
+        return <Activity />;
       case 'schedule':
-        return <AcademicScheduleAndAttendance />;
+        return <Schedule />;
       case 'notes':
       case 'tasks':
         return <NotesAndTasks />;

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useApp } from '../../context/AppContext';
-import type { CustomTimerItem, TimerColorTheme } from '../../types';
+import type { CustomTimerItem, SessionReflection, TimerColorTheme } from '../../types';
 import { 
   Play, 
   Pause, 
@@ -56,6 +56,7 @@ export const TimerAndAlarm: React.FC = () => {
   const { 
     settings, 
     logSession, 
+    updateSessionReflection,
     sessions, 
     alarms, 
     addAlarm, 
@@ -91,12 +92,15 @@ export const TimerAndAlarm: React.FC = () => {
   const [timeLeft, setTimeLeft] = useState<number>(activeTimer.durationMinutes * 60);
   const [isRunning, setIsRunning] = useState(false);
   const [leaveCount, setLeaveCount] = useState(0);
+  const [focusIntention, setFocusIntention] = useState('');
   const [completedWorkBlocks, setCompletedWorkBlocks] = useState(0);
   const [breakScreen, setBreakScreen] = useState<{
     type: 'shortBreak' | 'longBreak';
     totalSeconds: number;
     secondsLeft: number;
     lastLeaveCount: number;
+    lastSessionId: string;
+    reflection?: SessionReflection;
     startedAt: string;
   } | null>(null);
 
@@ -226,11 +230,13 @@ export const TimerAndAlarm: React.FC = () => {
           if (activeTimer.type === 'focus' || activeTimer.type === 'custom') {
             const sessionLeaves = leaveCountRef.current;
             const startedAt = sessionStartTimeRef.current || new Date(Date.now() - activeTimer.durationMinutes * 60000).toISOString();
-            logSession({
+            const sessionId = logSession({
               subject: activeTimer.name,
               durationMinutes: activeTimer.durationMinutes,
               startedAt,
               leaveCount: sessionLeaves,
+              endedEarly: false,
+              intention: focusIntention.trim() || undefined,
               type: 'pomodoro',
             });
             sessionStartTimeRef.current = null;
@@ -248,6 +254,7 @@ export const TimerAndAlarm: React.FC = () => {
               totalSeconds: breakSecs,
               secondsLeft: breakSecs,
               lastLeaveCount: sessionLeaves,
+              lastSessionId: sessionId,
               startedAt: new Date().toISOString(),
             });
           } else if (activeTimer.type === 'shortBreak' || activeTimer.type === 'longBreak') {
@@ -270,7 +277,7 @@ export const TimerAndAlarm: React.FC = () => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [isRunning, activeTimer.name, activeTimer.durationMinutes, activeTimer.type, completedWorkBlocks, logSession, playAlarmSound, settings.notificationsEnabled, settings.shortBreakMinutes]);
+  }, [isRunning, activeTimer.name, activeTimer.durationMinutes, activeTimer.type, completedWorkBlocks, focusIntention, logSession, playAlarmSound, settings.notificationsEnabled, settings.shortBreakMinutes]);
 
   // Enforced break countdown effect
   useEffect(() => {
@@ -323,6 +330,21 @@ export const TimerAndAlarm: React.FC = () => {
     setIsRunning(false);
     if (notificationIdRef.current) void cancelTimerNotification(notificationIdRef.current);
     setTimeLeft(activeTimer.durationMinutes * 60);
+  };
+
+  const handleEndEarly = () => {
+    const elapsedSeconds = Math.max(0, activeTimer.durationMinutes * 60 - timeLeft);
+    const elapsedMinutes = Math.max(1, Math.round(elapsedSeconds / 60));
+    logSession({
+      subject: activeTimer.name,
+      durationMinutes: elapsedMinutes,
+      startedAt: sessionStartTimeRef.current || undefined,
+      leaveCount: leaveCountRef.current,
+      endedEarly: true,
+      intention: focusIntention.trim() || undefined,
+      type: 'pomodoro',
+    });
+    handleReset();
   };
 
   const handleRunToggle = async () => {
@@ -677,6 +699,20 @@ export const TimerAndAlarm: React.FC = () => {
               </div>
             </div>
 
+            {/* Optional 1-line Focus Intention */}
+            {(activeTimer.type === 'focus' || activeTimer.type === 'custom') && (
+              <div className="max-w-sm mx-auto">
+                <input
+                  type="text"
+                  value={focusIntention}
+                  onChange={(e) => setFocusIntention(e.target.value)}
+                  placeholder="What are you focusing on? (optional)"
+                  aria-label="Focus intention"
+                  className="w-full rounded-2xl border border-emerald-200 dark:border-emerald-800/60 bg-white/80 dark:bg-emerald-950/30 px-4 py-2 text-xs font-semibold text-[#14201A] dark:text-white placeholder:text-[#4B5B52]/70 focus:outline-none"
+                />
+              </div>
+            )}
+
             {/* Playback Controls & Time Boost */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
               
@@ -711,7 +747,9 @@ export const TimerAndAlarm: React.FC = () => {
                 </button>
 
                 <button
+                  type="button"
                   onClick={() => void handleRunToggle()}
+                  aria-label={isRunning ? 'Pause timer' : 'Start timer'}
                   className={`w-16 h-16 rounded-2xl bg-gradient-to-tr ${getThemeGradient(activeTimer.colorTheme)} text-white flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all`}
                 >
                   {isRunning ? (
@@ -720,6 +758,17 @@ export const TimerAndAlarm: React.FC = () => {
                     <Play className="w-7 h-7 fill-current ml-1" />
                   )}
                 </button>
+
+                {(activeTimer.type === 'focus' || activeTimer.type === 'custom') &&
+                  (isRunning || timeLeft < activeTimer.durationMinutes * 60) && (
+                    <button
+                      type="button"
+                      onClick={handleEndEarly}
+                      className="px-3.5 py-2.5 rounded-2xl border border-emerald-200 dark:border-emerald-800 bg-white dark:bg-emerald-950/40 text-xs font-bold text-[#4B5B52] dark:text-emerald-200 hover:bg-[#DCFCE7]/50 transition-colors"
+                    >
+                      End early
+                    </button>
+                  )}
 
                 <button
                   onClick={() => {
@@ -1136,6 +1185,34 @@ export const TimerAndAlarm: React.FC = () => {
 
             <div className="rounded-2xl bg-white/90 dark:bg-slate-900/70 border border-emerald-200/80 dark:border-emerald-800/60 p-4 text-xs font-semibold text-[#4B5B52] dark:text-emerald-200">
               {formatLeaveCountMessage(breakScreen.lastLeaveCount)}
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-xs font-bold text-[#4B5B52] dark:text-emerald-200">
+                How did that session feel? (optional)
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {(['calm', 'neutral', 'distracted'] as const).map((mood) => {
+                  const selected = breakScreen.reflection === mood;
+                  return (
+                    <button
+                      key={mood}
+                      type="button"
+                      onClick={() => {
+                        updateSessionReflection(breakScreen.lastSessionId, mood);
+                        setBreakScreen((prev) => (prev ? { ...prev, reflection: mood } : null));
+                      }}
+                      className={`rounded-xl py-2 px-3 text-xs font-bold capitalize border transition-colors ${
+                        selected
+                          ? 'bg-[#15803D] text-white border-[#15803D]'
+                          : 'bg-white dark:bg-slate-900 text-[#14201A] dark:text-emerald-200 border-emerald-200 dark:border-emerald-800 hover:bg-[#DCFCE7]'
+                      }`}
+                    >
+                      {mood}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <button

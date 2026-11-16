@@ -14,7 +14,7 @@ import {
   Sparkles,
   Flame,
   Plus,
-  CalendarCheck
+  Activity
 } from 'lucide-react';
 import { QuickTaskModal } from '../tasks/QuickTaskModal';
 import { ENABLE_CLOUD_SYNC } from '../../services/firebaseSync';
@@ -42,11 +42,11 @@ export const Header: React.FC = () => {
           subtitle: 'Academic Command Center',
           icon: LayoutDashboard,
         };
-      case 'attendance':
+      case 'activity':
         return {
-          title: 'Attendance Hub',
-          subtitle: 'Daily class marking & 75% criteria tracker',
-          icon: CalendarCheck,
+          title: 'Activity',
+          subtitle: 'Focus trends, breaks & bedtime wind-down',
+          icon: Activity,
         };
       case 'notes':
       case 'tasks':

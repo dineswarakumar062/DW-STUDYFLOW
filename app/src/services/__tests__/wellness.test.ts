@@ -1,12 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import type { FocusSession } from '../../types';
+import type { BedtimeLog, FocusSession } from '../../types';
 import {
+  calculateDailyActivity,
   calculateWeeklyReflection,
   formatLeaveCountMessage,
   getBreakDurationMinutes,
   getNextBreakType,
   shouldCountLeave,
 } from '../wellness';
+import { getLocalDateStr } from '../storage';
 
 describe('wellness.ts', () => {
   describe('getNextBreakType & getBreakDurationMinutes', () => {
@@ -62,12 +64,14 @@ describe('wellness.ts', () => {
       expect(calculateWeeklyReflection([], anchor)).toEqual({
         plannedSessions: 0,
         completedSessions: 0,
+        endedEarlySessions: 0,
         totalFocusMinutes: 0,
         breaksTaken: 0,
+        breaksSkipped: 0,
       });
     });
 
-    it('computes stats for a partial week and excludes sessions older than 7 days', () => {
+    it('computes stats for a partial week including ended-early sessions and skipped breaks', () => {
       const sessions: FocusSession[] = [
         {
           id: 's1',
@@ -76,6 +80,15 @@ describe('wellness.ts', () => {
           completedAt: '2026-11-16T10:00:00.000Z',
           type: 'pomodoro',
           leaveCount: 1,
+        },
+        {
+          id: 's2',
+          subject: 'Algorithms',
+          durationMinutes: 10,
+          completedAt: '2026-11-16T11:00:00.000Z',
+          type: 'pomodoro',
+          endedEarly: true,
+          leaveCount: 2,
         },
         {
           id: 'b1',
@@ -103,10 +116,12 @@ describe('wellness.ts', () => {
       ];
 
       expect(calculateWeeklyReflection(sessions, anchor)).toEqual({
-        plannedSessions: 1,
+        plannedSessions: 2,
         completedSessions: 1,
-        totalFocusMinutes: 25,
+        endedEarlySessions: 1,
+        totalFocusMinutes: 35,
         breaksTaken: 1,
+        breaksSkipped: 1,
       });
     });
 
@@ -135,9 +150,56 @@ describe('wellness.ts', () => {
       expect(calculateWeeklyReflection(sessions, anchor)).toEqual({
         plannedSessions: 7,
         completedSessions: 7,
+        endedEarlySessions: 0,
         totalFocusMinutes: 175,
         breaksTaken: 7,
+        breaksSkipped: 0,
       });
+    });
+  });
+
+  describe('calculateDailyActivity', () => {
+    it('builds a 7-day activity series with focus minutes, leaves, and bedtime logs', () => {
+      const anchor = new Date(2026, 10, 16, 15, 0, 0);
+      const todayStr = getLocalDateStr(anchor);
+      const sessions: FocusSession[] = [
+        {
+          id: 's1',
+          subject: 'Pomodoro Focus',
+          durationMinutes: 25,
+          completedAt: new Date(2026, 10, 16, 10, 0, 0).toISOString(),
+          type: 'pomodoro',
+          leaveCount: 2,
+        },
+        {
+          id: 's2',
+          subject: 'Pomodoro Focus',
+          durationMinutes: 10,
+          completedAt: new Date(2026, 10, 16, 12, 0, 0).toISOString(),
+          type: 'pomodoro',
+          endedEarly: true,
+          leaveCount: 1,
+        },
+      ];
+      const bedtimeLogs: BedtimeLog[] = [
+        {
+          id: `bed_${todayStr}`,
+          date: todayStr,
+          status: 'on-time',
+          targetTime: '22:00',
+          loggedAt: new Date(2026, 10, 16, 22, 5, 0).toISOString(),
+        },
+      ];
+
+      const series = calculateDailyActivity(sessions, bedtimeLogs, anchor);
+      expect(series).toHaveLength(7);
+      const todayPoint = series[6];
+      expect(todayPoint.dateStr).toBe(todayStr);
+      expect(todayPoint.focusMinutes).toBe(35);
+      expect(todayPoint.completedCount).toBe(1);
+      expect(todayPoint.endedEarlyCount).toBe(1);
+      expect(todayPoint.leaveCount).toBe(3);
+      expect(todayPoint.bedtimeStatus).toBe('on-time');
     });
   });
 });
