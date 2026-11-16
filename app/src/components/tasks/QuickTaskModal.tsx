@@ -1,0 +1,101 @@
+import React, { useState } from 'react';
+import { X } from 'lucide-react';
+import type { TaskPriority } from '../../types';
+import { useApp } from '../../context/AppContext';
+import { getLocalDateStr } from '../../services/storage';
+
+interface QuickTaskModalProps {
+  open: boolean;
+  onClose: () => void;
+}
+
+export const QuickTaskModal: React.FC<QuickTaskModalProps> = ({ open, onClose }) => {
+  const { addTask } = useApp();
+  const [title, setTitle] = useState('');
+  const [subject, setSubject] = useState('');
+  const [priority, setPriority] = useState<TaskPriority>('high');
+  const [dueDate, setDueDate] = useState(getLocalDateStr());
+  const [dueTime, setDueTime] = useState('17:00');
+
+  if (!open) return null;
+
+  const resetAndClose = () => {
+    setTitle('');
+    setSubject('');
+    setPriority('high');
+    setDueDate(getLocalDateStr());
+    setDueTime('17:00');
+    onClose();
+  };
+
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!title.trim()) return;
+
+    addTask({
+      title: title.trim(),
+      subject: subject.trim() || undefined,
+      priority,
+      dueDate: dueDate || getLocalDateStr(),
+      dueTime: dueTime || undefined,
+      completed: false,
+    });
+    resetAndClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/30 backdrop-blur-xs p-4" role="dialog" aria-modal="true" aria-labelledby="quick-task-title">
+      <div className="relative overflow-hidden w-full max-w-lg rounded-[2rem] p-6 sm:p-8 shadow-2xl border border-indigo-200/90 dark:border-indigo-800/60 bg-gradient-to-br from-indigo-50/95 via-purple-50/50 to-white/95 dark:from-indigo-950/45 dark:via-purple-950/25 dark:to-slate-900/90">
+        <div className="absolute -top-12 -right-12 w-36 h-36 rounded-full bg-indigo-400/20 dark:bg-indigo-500/10 blur-2xl pointer-events-none" />
+        
+        <div className="mb-6 flex items-center justify-between gap-4 relative z-10">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-indigo-600 dark:text-indigo-300">Quick capture</p>
+            <h3 id="quick-task-title" className="mt-1 text-2xl font-black text-slate-950 dark:text-white">Add a new task</h3>
+          </div>
+          <button type="button" onClick={resetAndClose} aria-label="Close new task dialog" className="glass-icon-button">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4 relative z-10">
+          <div>
+            <label htmlFor="quick-task-name" className="glass-label">Task title</label>
+            <input id="quick-task-name" autoFocus required value={title} onChange={(event) => setTitle(event.target.value)} placeholder="e.g. Complete math problem set" className="glass-input" />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="quick-task-subject" className="glass-label">Subject</label>
+              <input id="quick-task-subject" value={subject} onChange={(event) => setSubject(event.target.value)} placeholder="Optional (e.g. Mathematics)" className="glass-input" />
+            </div>
+            <div>
+              <label htmlFor="quick-task-priority" className="glass-label">Priority</label>
+              <select id="quick-task-priority" value={priority} onChange={(event) => setPriority(event.target.value as TaskPriority)} className="glass-input">
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="quick-task-date" className="glass-label">Due Date</label>
+              <input id="quick-task-date" type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} className="glass-input" />
+            </div>
+            <div>
+              <label htmlFor="quick-task-time" className="glass-label">Due Time</label>
+              <input id="quick-task-time" type="time" value={dueTime} onChange={(event) => setDueTime(event.target.value)} className="glass-input" />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-3">
+            <button type="button" onClick={resetAndClose} className="glass-secondary-button">Cancel</button>
+            <button type="submit" className="glass-primary-button">Save task</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};

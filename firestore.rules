@@ -1,0 +1,85 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {userId} (matches Firebase Auth UID)
+    // Fields:
+    //   - profile: map (optional, max 15 keys) - Student profile settings and personal details
+    //   - tasks: list (optional, max 500 items) - To-do items and subtasks
+    //   - notes: list (optional, max 500 items) - Subject study notes and tags
+    //   - schedule: list (optional, max 200 items) - Class timetable items
+    //   - sessions: list (optional, max 2000 items) - Recorded study/pomodoro sessions
+    //   - settings: map (optional, max 20 keys) - Application user preferences and sync ID
+    //   - alarms: list (optional, max 100 items) - User configured study reminders/alarms
+    //   - customTimers: list (optional, max 100 items) - Custom pomodoro timer presets
+    //   - attendance: list (optional, max 2000 items) - Daily subject attendance records
+    //   - attendanceGoals: list (optional, max 100 items) - Minimum attendance target thresholds
+    //   - updatedAt: timestamp or string (optional, max 100 chars if string) - Last sync timestamp
+    //   - updatedBy: string (optional, max 100 chars) - Device identifier for sync conflict detection
+    //   - exportTimestamp: string (optional, max 100 chars) - Metadata for full backup export/import
+    //
+    // All other collections and paths are denied by default.
+    // ===============================================================
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function hasValidUserFields() {
+      return request.resource.data.keys().hasOnly([
+        'profile',
+        'tasks',
+        'notes',
+        'schedule',
+        'sessions',
+        'settings',
+        'alarms',
+        'customTimers',
+        'attendance',
+        'attendanceGoals',
+        'updatedAt',
+        'updatedBy',
+        'exportTimestamp'
+      ]);
+    }
+
+    function isValidUserDoc() {
+      return hasValidUserFields() &&
+        (!('profile' in request.resource.data) || (request.resource.data.profile is map && request.resource.data.profile.size() <= 15)) &&
+        (!('tasks' in request.resource.data) || (request.resource.data.tasks is list && request.resource.data.tasks.size() <= 500)) &&
+        (!('notes' in request.resource.data) || (request.resource.data.notes is list && request.resource.data.notes.size() <= 500)) &&
+        (!('schedule' in request.resource.data) || (request.resource.data.schedule is list && request.resource.data.schedule.size() <= 200)) &&
+        (!('sessions' in request.resource.data) || (request.resource.data.sessions is list && request.resource.data.sessions.size() <= 2000)) &&
+        (!('settings' in request.resource.data) || (request.resource.data.settings is map && request.resource.data.settings.size() <= 20)) &&
+        (!('alarms' in request.resource.data) || (request.resource.data.alarms is list && request.resource.data.alarms.size() <= 100)) &&
+        (!('customTimers' in request.resource.data) || (request.resource.data.customTimers is list && request.resource.data.customTimers.size() <= 100)) &&
+        (!('attendance' in request.resource.data) || (request.resource.data.attendance is list && request.resource.data.attendance.size() <= 2000)) &&
+        (!('attendanceGoals' in request.resource.data) || (request.resource.data.attendanceGoals is list && request.resource.data.attendanceGoals.size() <= 100)) &&
+        (!('updatedAt' in request.resource.data) || (request.resource.data.updatedAt is timestamp || (request.resource.data.updatedAt is string && request.resource.data.updatedAt.size() <= 100))) &&
+        (!('updatedBy' in request.resource.data) || (request.resource.data.updatedBy is string && request.resource.data.updatedBy.size() <= 100)) &&
+        (!('exportTimestamp' in request.resource.data) || (request.resource.data.exportTimestamp is string && request.resource.data.exportTimestamp.size() <= 100));
+    }
+
+    // User document rules: only owner can read, write, or delete their document
+    match /users/{userId} {
+      allow read, delete: if isOwner(userId);
+      allow create, update: if isOwner(userId) && isValidUserDoc();
+    }
+
+    // Default deny for all other documents/collections
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
