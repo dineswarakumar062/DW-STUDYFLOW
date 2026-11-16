@@ -68,7 +68,6 @@ export const defaultProfile: StudentProfile = {
   name: '',
   major: '',
   academicYear: '',
-  targetGpa: '',
   weeklyGoalHours: 15,
   email: '',
   bio: '',
@@ -84,7 +83,7 @@ export const defaultSettings: AppSettings = {
   autoStartPomodoros: false,
   pomodoroMinutes: 25,
   shortBreakMinutes: 5,
-  autoSync: true,
+  autoSync: false,
   deviceSyncId: 'device_' + Math.random().toString(36).substring(2, 9),
 };
 
@@ -487,7 +486,6 @@ export const storage = {
           name: sanitizeText(p.name),
           major: sanitizeText(p.major),
           academicYear: sanitizeText(p.academicYear),
-          targetGpa: sanitizeText(p.targetGpa),
           weeklyGoalHours: typeof p.weeklyGoalHours === 'number' ? p.weeklyGoalHours : defaultProfile.weeklyGoalHours,
           email: sanitizeText(p.email),
           bio: sanitizeText(p.bio),

@@ -3,6 +3,8 @@ import type { Auth, User } from 'firebase/auth';
 import type { Firestore, Unsubscribe } from 'firebase/firestore';
 import { storage, subscribeToLocalChanges } from './storage';
 
+export const ENABLE_CLOUD_SYNC = false;
+
 export type FirebaseSyncStatus = 'synced' | 'syncing' | 'offline';
 export type FirebaseSyncUser = Pick<User, 'uid' | 'email'>;
 
@@ -15,7 +17,7 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-export const firebaseConfigured = Object.values(firebaseConfig).every(Boolean);
+export const firebaseConfigured = ENABLE_CLOUD_SYNC && Object.values(firebaseConfig).every(Boolean);
 
 let appInstance: FirebaseApp | null = null;
 let authInstance: Auth | null = null;
@@ -48,7 +50,7 @@ function getFirestoreModule() {
 }
 
 async function getFirebaseServices() {
-  if (!firebaseConfigured) return null;
+  if (!ENABLE_CLOUD_SYNC || !firebaseConfigured) return null;
   const [appMod, authMod, firestoreMod] = await Promise.all([
     getAppModule(),
     getAuthModule(),
@@ -71,6 +73,10 @@ async function getFirebaseServices() {
 }
 
 export const subscribeToFirebaseAuth = (listener: (user: FirebaseSyncUser | null) => void) => {
+  if (!ENABLE_CLOUD_SYNC) {
+    listener(null);
+    return () => {};
+  }
   let unsubscribe: (() => void) | null = null;
   let active = true;
 
@@ -225,6 +231,10 @@ export function startFirebaseRealtimeSync(
   onRemoteData: (data: string) => void,
   onStatus: (status: FirebaseSyncStatus) => void,
 ) {
+  if (!ENABLE_CLOUD_SYNC) {
+    onStatus('offline');
+    return () => {};
+  }
   let isCancelled = false;
   let stopAuth: (() => void) | null = null;
   let stopDocument: Unsubscribe | null = null;

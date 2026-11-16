@@ -15,7 +15,6 @@
     "@capacitor/app": "^8.1.2",
     "@capacitor/core": "^8.5.0",
     "@capacitor/local-notifications": "^8.3.1",
-    "@google/genai": "^2.19.0",
     "@tailwindcss/vite": "^4.3.3",
     "canvas-confetti": "^1.9.4",
     "dompurify": "^3.4.16",

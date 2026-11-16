@@ -7,7 +7,6 @@ export interface StudentProfile {
   name: string;
   major: string;
   academicYear: string;
-  targetGpa: string;
   weeklyGoalHours: number;
   email: string;
   bio: string;

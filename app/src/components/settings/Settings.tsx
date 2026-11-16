@@ -33,6 +33,7 @@ import {
   sendTestNotification, 
   type NotificationPermission 
 } from '../../services/notifications';
+import { ENABLE_CLOUD_SYNC } from '../../services/firebaseSync';
 
 export const Settings: React.FC = () => {
   const { 
@@ -338,8 +339,9 @@ export const Settings: React.FC = () => {
       </div>
 
       {/* =========================================================================
-          3. CLOUD SYNC & BACKUP (Vibrant Emerald & Teal Mint Aurora)
+          3. CLOUD SYNC & BACKUP (Hidden when ENABLE_CLOUD_SYNC is false)
           ========================================================================= */}
+      {ENABLE_CLOUD_SYNC && (
       <div className="relative overflow-hidden rounded-3xl p-6 sm:p-8 border border-emerald-200/90 dark:border-emerald-800/60 bg-gradient-to-br from-emerald-50/95 via-teal-50/50 to-white/95 dark:from-emerald-950/40 dark:via-teal-950/25 dark:to-slate-900/90 shadow-xl shadow-emerald-500/5 space-y-6 transition-all">
         
         {/* Vibrant Ambient Glow Orb */}
@@ -518,6 +520,7 @@ export const Settings: React.FC = () => {
           </button>
         </div>
       </div>
+      )}
 
       {/* =========================================================================
           4. MANUAL DATA BACKUP & RESTORE (Vibrant Amber & Sunset Peach Aurora)

@@ -7,10 +7,8 @@ import {
   Plus, 
   Timer, 
   BookOpen, 
-  Flame, 
   Sparkles,
   Calendar,
-  Target,
   CalendarCheck,
   Check,
   X,
@@ -31,7 +29,6 @@ export const Dashboard: React.FC = () => {
     tasks, 
     toggleTask, 
     schedule, 
-    sessions,
     setActiveTab,
     attendance,
     attendanceGoals,
@@ -78,15 +75,6 @@ export const Dashboard: React.FC = () => {
   const todayName = days[new Date().getDay()];
   const todayClasses = schedule.filter(c => c.dayOfWeek === todayName);
   const displayClasses = todayClasses;
-
-  const sessionDays = new Set(sessions.map(session => new Date(session.completedAt).toDateString()));
-  let studyStreak = 0;
-  for (let offset = 0; offset < 365; offset += 1) {
-    const date = new Date();
-    date.setDate(date.getDate() - offset);
-    if (!sessionDays.has(date.toDateString())) break;
-    studyStreak += 1;
-  }
 
   const handleToggleTask = (id: string) => {
     toggleTask(id);
@@ -188,7 +176,7 @@ export const Dashboard: React.FC = () => {
 
           {/* Subtitle */}
           <p className="text-white/90 text-sm sm:text-base font-medium leading-relaxed">
-            You have <span className="font-bold underline decoration-white/40">{displayClasses.length} {displayClasses.length === 1 ? 'class' : 'classes'}</span> scheduled for today and <span className="font-bold underline decoration-white/40">{priorityTasks.length} pending {priorityTasks.length === 1 ? 'task' : 'tasks'}</span>. Stay focused and keep your streak!
+            You have <span className="font-bold underline decoration-white/40">{displayClasses.length} {displayClasses.length === 1 ? 'class' : 'classes'}</span> scheduled for today and <span className="font-bold underline decoration-white/40">{priorityTasks.length} pending {priorityTasks.length === 1 ? 'task' : 'tasks'}</span>. Take it one focused session at a time.
           </p>
         </div>
 
@@ -221,25 +209,11 @@ export const Dashboard: React.FC = () => {
       </div>
 
       {/* =========================================================================
-          2. METRICS ROW: 5 VIBRANT STAT CARDS (Includes Overall Attendance)
+          2. METRICS ROW: STAT CARDS (Includes Overall Attendance)
           ========================================================================= */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-5">
         
-        {/* Card 1: Study Streak (Vibrant Amber Aurora) */}
-        <div className="relative overflow-hidden rounded-3xl p-4 sm:p-5 border border-amber-200/90 dark:border-amber-800/60 bg-gradient-to-br from-amber-50/95 via-orange-50/50 to-white/95 dark:from-amber-950/40 dark:via-orange-950/25 dark:to-slate-900/90 shadow-xl shadow-amber-500/5 flex items-center gap-3.5 transition-all hover:scale-[1.02]">
-          <div className="absolute -top-10 -right-10 w-24 h-24 rounded-full bg-amber-400/20 dark:bg-amber-500/10 blur-xl pointer-events-none" />
-          <div className="w-11 h-11 rounded-2xl bg-amber-100 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400 flex items-center justify-center shadow-xs shrink-0 border border-amber-200/60 relative z-10">
-            <Flame className="w-5 h-5 fill-amber-500 text-amber-500" />
-          </div>
-          <div className="relative z-10 min-w-0">
-            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 block truncate">Streak</span>
-            <span className="text-lg sm:text-xl font-black text-slate-900 dark:text-white font-headline mt-0.5 block truncate">
-              {studyStreak} {studyStreak === 1 ? 'Day' : 'Days'}
-            </span>
-          </div>
-        </div>
-
-        {/* Card 2: Today's Classes (Vibrant Indigo Aurora) */}
+        {/* Card 1: Today's Classes (Vibrant Indigo Aurora) */}
         <div 
           onClick={() => setActiveTab('schedule')}
           className="cursor-pointer relative overflow-hidden rounded-3xl p-4 sm:p-5 border border-indigo-200/90 dark:border-indigo-800/60 bg-gradient-to-br from-indigo-50/95 via-purple-50/50 to-white/95 dark:from-indigo-950/40 dark:via-purple-950/25 dark:to-slate-900/90 shadow-xl shadow-indigo-500/5 flex items-center gap-3.5 transition-all hover:scale-[1.02]"
@@ -290,23 +264,6 @@ export const Dashboard: React.FC = () => {
             <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 block truncate">Tasks Done</span>
             <span className="text-lg sm:text-xl font-black text-slate-900 dark:text-white font-headline mt-0.5 block">
               {completionRate}%
-            </span>
-          </div>
-        </div>
-
-        {/* Card 5: Target GPA (Vibrant Cosmic Purple Aurora) */}
-        <div 
-          onClick={() => setActiveTab('settings')}
-          className="cursor-pointer relative overflow-hidden rounded-3xl p-4 sm:p-5 border border-purple-200/90 dark:border-purple-800/60 bg-gradient-to-br from-purple-50/95 via-fuchsia-50/50 to-white/95 dark:from-purple-950/40 dark:via-fuchsia-950/25 dark:to-slate-900/90 shadow-xl shadow-purple-500/5 flex items-center gap-3.5 transition-all hover:scale-[1.02]"
-        >
-          <div className="absolute -top-10 -right-10 w-24 h-24 rounded-full bg-purple-400/20 dark:bg-purple-500/10 blur-xl pointer-events-none" />
-          <div className="w-11 h-11 rounded-2xl bg-purple-100 dark:bg-purple-950/80 text-purple-600 dark:text-purple-300 flex items-center justify-center shadow-xs shrink-0 border border-purple-200/60 relative z-10">
-            <Target className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-          </div>
-          <div className="relative z-10 min-w-0">
-            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 block truncate">Target GPA</span>
-            <span className="text-lg sm:text-xl font-black text-slate-900 dark:text-white font-headline mt-0.5 block">
-              {profile.targetGpa || '—'}
             </span>
           </div>
         </div>

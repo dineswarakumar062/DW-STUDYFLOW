@@ -1,12 +1,8 @@
-import { useMemo, useState, lazy, Suspense } from 'react';
+import { useMemo, useState } from 'react';
 import type React from 'react';
-import { CalendarDays, ChevronLeft, Clock, MapPin, Plus, Trash2, User, Edit2, Sparkles, Edit3, X } from 'lucide-react';
+import { CalendarDays, ChevronLeft, Clock, MapPin, Plus, Trash2, User, Edit2, X } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import type { ClassSchedule } from '../../types';
-
-const AITimetableModal = lazy(() =>
-  import('./AITimetableModal').then(m => ({ default: m.AITimetableModal }))
-);
 
 const days: ClassSchedule['dayOfWeek'][] = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -26,12 +22,10 @@ const getGreeting = () => {
 };
 
 export const Schedule: React.FC = () => {
-  const { schedule, addClass, batchAddClasses, replaceSchedule, updateClass, deleteClass } = useApp();
+  const { schedule, addClass, updateClass, deleteClass } = useApp();
   const currentDay = days[(new Date().getDay() + 6) % 7];
   const [selectedDay, setSelectedDay] = useState<ClassSchedule['dayOfWeek']>(currentDay);
   const [showClassModal, setShowClassModal] = useState(false);
-  const [showAIScanModal, setShowAIScanModal] = useState(false);
-  const [speedDialOpen, setSpeedDialOpen] = useState(false);
   const [editingClassId, setEditingClassId] = useState<string | null>(null);
   const [subjectName, setSubjectName] = useState('');
   const [code, setCode] = useState('');
@@ -54,16 +48,10 @@ export const Schedule: React.FC = () => {
   const selectedClasses = schedule.filter(item => item.dayOfWeek === selectedDay).sort((a, b) => a.startTime.localeCompare(b.startTime));
 
   const openAddClassModal = () => {
-    setSpeedDialOpen(false);
     setEditingClassId(null);
     setSubjectName(''); setCode(''); setInstructor(''); setLocation('');
     setDayOfWeek(selectedDay); setStartTime('10:00'); setEndTime('11:30');
     setShowClassModal(true);
-  };
-
-  const openAIScanModal = () => {
-    setSpeedDialOpen(false);
-    setShowAIScanModal(true);
   };
 
   const openEditClassModal = (item: ClassSchedule) => {
@@ -82,17 +70,6 @@ export const Schedule: React.FC = () => {
       addClass({ ...details, color: colors[schedule.length % colors.length] });
     }
     setSelectedDay(dayOfWeek); setShowClassModal(false);
-  };
-
-  const handleBatchImport = (classes: Omit<ClassSchedule, 'id'>[], replace = false) => {
-    if (replace) {
-      replaceSchedule(classes);
-    } else {
-      batchAddClasses(classes);
-    }
-    if (classes.length > 0) {
-      setSelectedDay(classes[0].dayOfWeek);
-    }
   };
 
   return (
@@ -117,14 +94,11 @@ export const Schedule: React.FC = () => {
             <CalendarDays className="h-12 w-12" />
           </div>
           <h2 className="mt-6 text-2xl font-black text-slate-950 dark:text-white">No classes on this day</h2>
-          <p className="mt-2 max-w-sm text-sm font-semibold leading-relaxed text-slate-500 dark:text-slate-400">Add a course manually or scan your weekly timetable image/PDF with AI.</p>
+          <p className="mt-2 max-w-sm text-sm font-semibold leading-relaxed text-slate-500 dark:text-slate-400">Add a course to your weekly timetable.</p>
           
           <div className="flex flex-wrap items-center justify-center gap-3 mt-6">
             <button type="button" onClick={openAddClassModal} className="glass-primary-button inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-sm font-black shadow-md">
-              <Plus className="h-4 w-4" />Manual Add
-            </button>
-            <button type="button" onClick={openAIScanModal} className="inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-sm font-black bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-indigo-600/25 hover:from-purple-500 hover:to-indigo-500 transition-all active:scale-95">
-              <Sparkles className="h-4 w-4" />AI Scan Timetable
+              <Plus className="h-4 w-4" />Add Course
             </button>
           </div>
         </div>
@@ -137,9 +111,6 @@ export const Schedule: React.FC = () => {
             </div>
             
             <div className="flex items-center gap-2">
-              <button type="button" onClick={openAIScanModal} className="hidden sm:inline-flex items-center gap-1.5 rounded-full px-4 py-2.5 text-xs font-black bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60 shadow-xs hover:bg-purple-100 transition-colors">
-                <Sparkles className="h-3.5 w-3.5" />Scan Timetable
-              </button>
               <button type="button" onClick={openAddClassModal} className="glass-primary-button inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-black shadow-md">
                 <Plus className="h-4 w-4" />Add Course
               </button>
@@ -174,49 +145,14 @@ export const Schedule: React.FC = () => {
       )}
 
       {/* =========================================================================
-          SPEED-DIAL FLOATING ACTION BUTTON (2 Floating Options)
+          FLOATING ACTION BUTTON (Add Course)
           ========================================================================= */}
-      <div className="fixed bottom-24 right-5 sm:bottom-8 sm:right-8 z-40 flex flex-col items-end gap-3">
-        
-        {/* Speed-Dial Menu Options */}
-        {speedDialOpen && (
-          <div className="flex flex-col items-end gap-2.5 animate-fade-in">
-            {/* Option 1: AI Timetable Scan */}
-            <button
-              type="button"
-              onClick={openAIScanModal}
-              className="flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-black text-xs shadow-xl hover:scale-105 active:scale-95 transition-all border border-white/20"
-            >
-              <span>Scan Timetable (Image/PDF)</span>
-              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-                <Sparkles className="w-4 h-4 text-amber-300" />
-              </div>
-            </button>
-
-            {/* Option 2: Manual Add Course */}
-            <button
-              type="button"
-              onClick={openAddClassModal}
-              className="flex items-center gap-2.5 px-4 py-2.5 rounded-full bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-black text-xs shadow-xl hover:scale-105 active:scale-95 transition-all border border-indigo-200 dark:border-slate-700"
-            >
-              <span>Manual Course Entry</span>
-              <div className="w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
-                <Edit3 className="w-4 h-4" />
-              </div>
-            </button>
-          </div>
-        )}
-
-        {/* Main Floating Trigger Button */}
+      <div className="fixed bottom-24 right-5 sm:bottom-8 sm:right-8 z-40">
         <button
           type="button"
-          onClick={() => setSpeedDialOpen(!speedDialOpen)}
-          aria-label="Add course options"
-          className={`h-14 w-14 rounded-full shadow-2xl flex items-center justify-center transition-all hover:scale-110 active:scale-95 ${
-            speedDialOpen
-              ? 'bg-rose-500 text-white rotate-45'
-              : 'bg-[#4338ca] text-white shadow-indigo-600/35'
-          }`}
+          onClick={openAddClassModal}
+          aria-label="Add course"
+          className="h-14 w-14 rounded-full shadow-2xl flex items-center justify-center transition-all hover:scale-110 active:scale-95 bg-[#15803d] text-white"
         >
           <Plus className="h-7 w-7" />
         </button>
@@ -283,17 +219,6 @@ export const Schedule: React.FC = () => {
             </form>
           </div>
         </div>
-      )}
-
-      {/* Modal: AI Timetable Scanner */}
-      {showAIScanModal && (
-        <Suspense fallback={null}>
-          <AITimetableModal
-            open={showAIScanModal}
-            onClose={() => setShowAIScanModal(false)}
-            onImportClasses={handleBatchImport}
-          />
-        </Suspense>
       )}
     </div>
   );

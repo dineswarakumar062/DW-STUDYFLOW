@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
-import { User, Mail, GraduationCap, Target, Clock, Save, Sparkles } from 'lucide-react';
+import { User, Mail, GraduationCap, Clock, Save, Sparkles } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 export const Profile: React.FC = () => {
@@ -10,7 +10,6 @@ export const Profile: React.FC = () => {
   const [email, setEmail] = useState(profile.email);
   const [major, setMajor] = useState(profile.major);
   const [academicYear, setAcademicYear] = useState(profile.academicYear);
-  const [targetGpa, setTargetGpa] = useState(profile.targetGpa);
   const [weeklyGoalHours, setWeeklyGoalHours] = useState(profile.weeklyGoalHours);
   const [bio, setBio] = useState(profile.bio);
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -20,7 +19,6 @@ export const Profile: React.FC = () => {
     setEmail(profile.email);
     setMajor(profile.major);
     setAcademicYear(profile.academicYear);
-    setTargetGpa(profile.targetGpa);
     setWeeklyGoalHours(profile.weeklyGoalHours);
     setBio(profile.bio);
   }, [profile]);
@@ -32,7 +30,6 @@ export const Profile: React.FC = () => {
       email,
       major,
       academicYear,
-      targetGpa,
       weeklyGoalHours: Number(weeklyGoalHours),
       bio,
     });
@@ -126,20 +123,6 @@ export const Profile: React.FC = () => {
               value={academicYear}
               onChange={(e) => setAcademicYear(e.target.value)}
               placeholder="e.g. 3rd Year / Semester 5"
-              className="w-full bg-white/85 dark:bg-slate-800 text-slate-900 dark:text-white rounded-2xl py-3 px-4 text-sm border border-indigo-100 dark:border-slate-700 focus:border-indigo-600 focus:outline-none font-bold shadow-xs"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-black text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
-              <Target className="w-3.5 h-3.5 text-purple-600" />
-              Target GPA
-            </label>
-            <input
-              type="text"
-              value={targetGpa}
-              onChange={(e) => setTargetGpa(e.target.value)}
-              placeholder="e.g. 3.9"
               className="w-full bg-white/85 dark:bg-slate-800 text-slate-900 dark:text-white rounded-2xl py-3 px-4 text-sm border border-indigo-100 dark:border-slate-700 focus:border-indigo-600 focus:outline-none font-bold shadow-xs"
             />
           </div>
