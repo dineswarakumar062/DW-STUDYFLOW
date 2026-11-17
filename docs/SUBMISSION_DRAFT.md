@@ -61,17 +61,24 @@ Sketch these 4 screens on paper with a pen/pencil, label the buttons, and take c
 
 *(Include your friends' real earlier feedback here too—e.g., "P1 & P2 tested an earlier build and reported that alarms sometimes did not ring and asked for calm quotes.")*
 
-### B. 3-Task Usability Test (Record Pass/Fail, Confusion Points, & Feedback)
-Give each participant the app (web preview or Android) and ask them to complete:
-1. **Task 1 (Focus & Leave Count):** Start a 25-minute (or 1-minute custom) focus session, switch away from the app once, return, and check the leave count.
-2. **Task 2 (Enforced Break):** Let the session finish, read the break screen, and skip the break using the button or keyboard (`Escape`/`Enter`).
-3. **Task 3 (Bedtime Alarm & Reflection):** Open **Alarms**, create a **Bedtime wind-down** daily alarm, then return to **Dashboard** and read the **Weekly Reflection** card.
+### B. 3-Task Usability Test Results (n = 4, Anonymized)
 
-| Participant | Task 1 (Focus & Leave) | Task 2 (Break & Skip) | Task 3 (Bedtime & Reflection) | Confusion / Feedback |
-|---|---|---|---|---|
-| P1 | | | | |
-| P2 | | | | |
-| P3 | | | | |
+Participants consented via an anonymous Google Form (email collection disabled). *Note: Sample size is n = 4 (vs. 5–8 target); this is noted as a limitation.*
+
+- **Demographics (Age):** 18–20 (2), 21–23 (1), 24 or older (1)
+- **Uses phone during study sessions:** Yes (1), Sometimes (1), No (2)
+- **Task 1 (25-min Focus + Leave Count):** Yes (1), Partly (3), No (0)
+- **Task 2 (Enforced Break Screen + Take/Skip):** Yes (3), Partly (1), No (0)
+- **Task 3 (Bedtime Wind-Down Alarm + Weekly Reflection):** Yes (1), Partly (3), No (0)
+- **"Starting a focus session was easy" (1–5):** Mean **4.5 / 5** (scores: 3, 5, 5, 5)
+- **"The dashboard felt calm, not stressful" (1–5):** Mean **4.0 / 5** (scores: 4, 3, 4, 5)
+
+| Participant | Age | Phone in Study | Task 1 | Task 2 | Task 3 | Easy Start (1–5) | Calm UI (1–5) | Feedback / Confusion |
+|---|---|---|---|---|---|---|---|---|
+| **P1** | 18–20 | Yes | Yes | Yes | Partly | 3 | 4 | Wasn't sure whether the break screen could be skipped until reading the bottom text; suggested showing remaining time on the main timer while the break is running. |
+| **P2** | 21–23 | Sometimes | Partly | Partly | Partly | 5 | 3 | Found Alarms hidden under Focus Timer -> top toggle; suggested a direct shortcut or clearer label on the Dashboard/Activity card for Task 3. |
+| **P3** | 18–20 | No | Partly | Yes | Partly | 5 | 4 | Reported Activity analytics/graphs felt out of sync and could be improved with clearer remaining-activity graphs. |
+| **P4** | 24+ | No | Partly | Yes | Yes | 5 | 5 | Liked the app features and design; noted it encourages better study habits, time management, and self-tracking when distracted. |
 
 ---
 
