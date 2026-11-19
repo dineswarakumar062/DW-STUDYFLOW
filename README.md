@@ -40,31 +40,6 @@ Based on the original **studyzflow** project by **Dineswarkumar**: [https://gith
 
 ## 📸 Screenshots
 
-### 🖥️ Web (Desktop)
-
-<p align="center">
-  <img src="docs/screenshots/dashboard-desktop.png" alt="Dashboard – Academic Command Center" width="100%" />
-  <br/><sub><b>Dashboard</b> — today's classes, priority tasks, streak &amp; GPA at a glance</sub>
-</p>
-
-<table>
-  <tr>
-    <td width="50%" align="center">
-      <img src="docs/screenshots/timetable-desktop.png" alt="Weekly Timetable" />
-      <br/><sub><b>Weekly Timetable</b> — manual add or AI scan</sub>
-    </td>
-    <td width="50%" align="center">
-      <img src="docs/screenshots/notes-desktop.png" alt="Tasks and Notes" />
-      <br/><sub><b>Tasks &amp; Notes</b> — tags, pins &amp; importance filters</sub>
-    </td>
-  </tr>
-  <tr>
-    <td colspan="2" align="center">
-      <img src="docs/screenshots/settings-desktop.png" alt="Settings and Backup" width="75%" />
-      <br/><sub><b>Settings &amp; Backup</b> — notifications, cloud sync, JSON export/import</sub>
-    </td>
-  </tr>
-</table>
 
 ### 📱 Android / Mobile
 
