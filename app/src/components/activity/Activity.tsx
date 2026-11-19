@@ -1,11 +1,57 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { calculateDailyActivity, calculateWeeklyReflection } from '../../services/wellness';
 import { getLocalDateStr } from '../../services/storage';
-import { Activity as ActivityIcon, Moon, CheckCircle2, Clock, Coffee, Smartphone } from 'lucide-react';
+import { Activity as ActivityIcon, Moon, CheckCircle2, Clock, Coffee, Smartphone, Wind } from 'lucide-react';
+
+const DEFAULT_WINDDOWN_STEPS = [
+  { id: 'tabs', label: 'Close extra study tabs', done: false },
+  { id: 'silent', label: 'Put phone on silent / face-down', done: false },
+  { id: 'stretch', label: 'Stretch for 2 minutes', done: false },
+  { id: 'read', label: 'Dim screen & step away', done: false },
+];
 
 export const Activity: React.FC = () => {
   const { sessions, bedtimeLogs, logBedtime, alarms, setActiveTab } = useApp();
+
+  const [windDownChecklist, setWindDownChecklist] = useState<Array<{ id: string; label: string; done: boolean }>>(() => {
+    try {
+      const raw = localStorage.getItem('studyflow_winddown_checklist');
+      return raw ? JSON.parse(raw) : DEFAULT_WINDDOWN_STEPS;
+    } catch {
+      return DEFAULT_WINDDOWN_STEPS;
+    }
+  });
+
+  const toggleWindDownStep = (id: string) => {
+    const updated = windDownChecklist.map((item) => (item.id === id ? { ...item, done: !item.done } : item));
+    setWindDownChecklist(updated);
+    try {
+      localStorage.setItem('studyflow_winddown_checklist', JSON.stringify(updated));
+    } catch {
+      // ignore storage errors
+    }
+  };
+
+  // 4-7-8 Breathing Guide state
+  const [breathingActive, setBreathingActive] = useState(false);
+  const [breathTick, setBreathTick] = useState(0);
+
+  useEffect(() => {
+    if (!breathingActive) return;
+    const interval = setInterval(() => {
+      setBreathTick((t) => (t + 1) % 19);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [breathingActive]);
+
+  const breathPhase = !breathingActive
+    ? { label: 'Ready', sub: '4s inhale · 7s hold · 8s exhale', scale: 'scale-95' }
+    : breathTick < 4
+    ? { label: `Inhale (${4 - breathTick}s)`, sub: 'Breathe in slowly through your nose', scale: 'scale-110' }
+    : breathTick < 11
+    ? { label: `Hold (${11 - breathTick}s)`, sub: 'Keep your shoulders relaxed', scale: 'scale-110' }
+    : { label: `Exhale (${19 - breathTick}s)`, sub: 'Breathe out gently', scale: 'scale-90' };
 
   const weekly = useMemo(() => calculateWeeklyReflection(sessions), [sessions]);
   const daily = useMemo(() => calculateDailyActivity(sessions, bedtimeLogs), [sessions, bedtimeLogs]);
@@ -282,6 +328,65 @@ export const Activity: React.FC = () => {
               </div>
             );
           })}
+        </div>
+
+        {/* Wind-Down Checklist */}
+        <div className="pt-3 border-t border-emerald-100 dark:border-emerald-800/50 space-y-2">
+          <p className="text-xs font-black text-[#14532D] dark:text-[#86EFAC]">
+            Nighttime Wind-Down Checklist
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {windDownChecklist.map((step) => (
+              <label
+                key={step.id}
+                className="flex items-center gap-2.5 rounded-2xl border border-emerald-100 dark:border-emerald-800/50 bg-[#DCFCE7]/40 dark:bg-emerald-950/30 px-3.5 py-2.5 text-xs font-semibold cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  checked={step.done}
+                  onChange={() => toggleWindDownStep(step.id)}
+                  className="accent-[#15803D] w-4 h-4"
+                />
+                <span className={step.done ? 'line-through text-[#4B5B52] dark:text-emerald-200/60' : 'text-[#14201A] dark:text-emerald-100'}>
+                  {step.label}
+                </span>
+              </label>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 4-7-8 Breathing Guide */}
+      <section
+        aria-label="4-7-8 Breathing Guide"
+        className="rounded-3xl border border-emerald-200/80 dark:border-emerald-800/60 bg-white dark:bg-[#13261C] p-5 sm:p-6 flex flex-col sm:flex-row items-center justify-between gap-5"
+      >
+        <div className="space-y-1.5 text-center sm:text-left">
+          <h2 className="text-base sm:text-lg font-black text-[#14201A] dark:text-white font-headline flex items-center justify-center sm:justify-start gap-2">
+            <Wind className="w-4 h-4 text-[#15803D] dark:text-[#86EFAC]" />
+            <span>4-7-8 Breathing Reset</span>
+          </h2>
+          <p className="text-xs font-medium text-[#4B5B52] dark:text-emerald-200/80">
+            {breathPhase.sub}
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setBreathTick(0);
+              setBreathingActive((prev) => !prev);
+            }}
+            className="mt-2 rounded-2xl bg-[#15803D] hover:bg-[#166534] text-white px-4 py-2 text-xs font-black transition-colors"
+          >
+            {breathingActive ? 'Stop Breathing Guide' : 'Start 4-7-8 Breathing'}
+          </button>
+        </div>
+
+        <div
+          className={`w-28 h-28 rounded-full bg-[#DCFCE7] dark:bg-emerald-900/60 border-4 border-[#15803D] dark:border-[#86EFAC] flex items-center justify-center text-center p-2 transition-transform duration-1000 ${breathPhase.scale}`}
+        >
+          <span className="text-xs font-black text-[#14532D] dark:text-white">
+            {breathPhase.label}
+          </span>
         </div>
       </section>
     </div>

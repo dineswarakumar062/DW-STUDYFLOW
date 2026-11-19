@@ -93,6 +93,23 @@ export const TimerAndAlarm: React.FC = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [leaveCount, setLeaveCount] = useState(0);
   const [focusIntention, setFocusIntention] = useState('');
+  const [parkedInput, setParkedInput] = useState('');
+  const [parkedThoughts, setParkedThoughts] = useState<Array<{ id: string; text: string; done: boolean }>>(() => {
+    try {
+      const raw = localStorage.getItem('studyflow_parked_thoughts');
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  });
+  const saveParkedThoughts = (items: Array<{ id: string; text: string; done: boolean }>) => {
+    setParkedThoughts(items);
+    try {
+      localStorage.setItem('studyflow_parked_thoughts', JSON.stringify(items));
+    } catch {
+      // ignore storage errors
+    }
+  };
   const [completedWorkBlocks, setCompletedWorkBlocks] = useState(0);
   const [breakScreen, setBreakScreen] = useState<{
     type: 'shortBreak' | 'longBreak';
@@ -771,6 +788,7 @@ export const TimerAndAlarm: React.FC = () => {
                   )}
 
                 <button
+                  type="button"
                   onClick={() => {
                     const currentIndex = customTimers.findIndex(t => t.id === activeTimerId);
                     const nextTimer = customTimers[(currentIndex + 1) % customTimers.length];
@@ -778,12 +796,89 @@ export const TimerAndAlarm: React.FC = () => {
                   }}
                   className="p-3.5 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200/80 dark:border-slate-700 transition-all shadow-xs"
                   title="Next Preset Timer"
+                  aria-label="Next Preset Timer"
                 >
                   <SkipForward className="w-5 h-5" />
                 </button>
               </div>
 
             </div>
+
+            {/* Distraction Parking Lot */}
+            {(activeTimer.type === 'focus' || activeTimer.type === 'custom') && (
+              <div className="pt-3 border-t border-emerald-100 dark:border-emerald-800/50 text-left space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black text-[#14532D] dark:text-[#86EFAC]">
+                    Distraction Parking Lot
+                  </span>
+                  {parkedThoughts.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => saveParkedThoughts([])}
+                      className="text-[11px] font-bold text-[#4B5B52] dark:text-emerald-200 hover:underline"
+                    >
+                      Clear all
+                    </button>
+                  )}
+                </div>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const text = parkedInput.trim();
+                    if (!text) return;
+                    saveParkedThoughts([{ id: String(Date.now()), text, done: false }, ...parkedThoughts]);
+                    setParkedInput('');
+                  }}
+                  className="flex gap-2"
+                >
+                  <input
+                    type="text"
+                    value={parkedInput}
+                    onChange={(e) => setParkedInput(e.target.value)}
+                    placeholder="Park an impulsive thought (e.g. Check email)..."
+                    aria-label="Park a distracting thought"
+                    className="flex-1 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-white dark:bg-emerald-950/30 px-3 py-1.5 text-xs font-medium text-[#14201A] dark:text-white focus:outline-none"
+                  />
+                  <button
+                    type="submit"
+                    className="rounded-xl bg-[#15803D] hover:bg-[#166534] text-white px-3 py-1.5 text-xs font-black"
+                  >
+                    Park
+                  </button>
+                </form>
+                {parkedThoughts.length > 0 && (
+                  <ul className="space-y-1 max-h-28 overflow-y-auto">
+                    {parkedThoughts.map((item) => (
+                      <li key={item.id} className="flex items-center justify-between gap-2 rounded-xl bg-[#DCFCE7]/50 dark:bg-emerald-950/40 px-3 py-1.5 text-xs">
+                        <label className="flex items-center gap-2 cursor-pointer min-w-0">
+                          <input
+                            type="checkbox"
+                            checked={item.done}
+                            onChange={() =>
+                              saveParkedThoughts(
+                                parkedThoughts.map((p) => (p.id === item.id ? { ...p, done: !p.done } : p))
+                              )
+                            }
+                            className="accent-[#15803D]"
+                          />
+                          <span className={`truncate ${item.done ? 'line-through text-[#4B5B52]' : 'text-[#14201A] dark:text-emerald-100'}`}>
+                            {item.text}
+                          </span>
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => saveParkedThoughts(parkedThoughts.filter((p) => p.id !== item.id))}
+                          aria-label={`Remove ${item.text}`}
+                          className="text-[#4B5B52] hover:text-rose-600 text-xs font-bold px-1"
+                        >
+                          ×
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
 
           </div>
 

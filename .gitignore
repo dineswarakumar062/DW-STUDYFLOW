@@ -14,7 +14,6 @@ build/
 .gradle/
 */.gradle/
 *.apk
-!studyzflow*.apk
 *.aab
 *.dex
 *.class
